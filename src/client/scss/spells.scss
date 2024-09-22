@@ -1,0 +1,51 @@
+$card-width: 100px;
+$card-height: 66.285px;
+
+div.spell,
+div.element-source {
+  width: $card-width;
+  height: $card-height;
+  font-size: 10px;
+  padding: 5px;
+  box-shadow: 0 0 2px 1px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease-in-out;
+
+  &.clickable {
+    &:hover {
+      transform: translateY(3px) scale(1.1);
+      box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  &.picked {
+    transform: translateY(3px) scale(1.1);
+    box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.3);
+  }
+
+  &.fire {
+    background-color: rgba(250, 121, 121, 0.5);
+  }
+
+  &.air {
+    background-color: rgba(253, 251, 145, 0.589);
+  }
+
+  &.earth {
+    background-color: rgba(147, 212, 144, 0.589);
+  }
+
+  &.water {
+    background-color: rgba(144, 168, 212, 0.589);
+  }
+
+  &.universal {
+    background-color: rgba(221, 130, 240, 0.589);
+  }
+}
+
+div.element-source {
+  height: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

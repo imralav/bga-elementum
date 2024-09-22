@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "init": "npm install bga-ts-template && npx bga-init Elementum \"Tomasz Karczewski imralav@gmail.com\" ./src --typescript --scss --vscode-extension-pack",
+    "build": "npx bga-build",
+    "watch": "npx bga-build --watch"
+  },
+  "dependencies": {
+    "bga-ts-template": "^1.1.8",
+    "typescript": "^5.4.5"
+  }
+}
