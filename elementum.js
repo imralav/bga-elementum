@@ -418,6 +418,12 @@ define("src/client/common/Templates", ["require", "exports", "bgagame/elementum"
                 element: spell.element,
             });
         };
+        Templates.idOfSpell = function (spell) {
+            return "spell_".concat(spell.number);
+        };
+        Templates.idOfSpellColumn = function (playerId, element) {
+            return "spells-column-".concat(playerId, "-").concat(element);
+        };
         return Templates;
     }());
     exports.Templates = Templates;
@@ -481,23 +487,111 @@ define("src/client/gui/PlayerBoard", ["require", "exports", "src/client/common/u
     }());
     exports.PlayerBoard = PlayerBoard;
 });
-define("src/client/gui/Spells", ["require", "exports", "src/client/common/Templates"], function (require, exports, Templates_2) {
+define("src/client/gui/animations", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.moveElementOnAnimationSurface = exports.cloneOnAnimationSurface = void 0;
+    function cloneOnAnimationSurface(idOfElementToClone, postfix) {
+        var _a;
+        var elementToClone = $(idOfElementToClone);
+        if (!elementToClone) {
+            console.error("Element to clone not found", idOfElementToClone);
+            return;
+        }
+        var animationSurface = $("animation-surface");
+        if (!animationSurface) {
+            console.error("Animation surface not found");
+            return;
+        }
+        var parent = elementToClone.parentNode;
+        var elementRectangle = elementToClone.getBoundingClientRect();
+        var centerY = elementRectangle.y + elementRectangle.height / 2;
+        var centerX = elementRectangle.x + elementRectangle.width / 2;
+        var newId = elementToClone.id + postfix;
+        var existingElementByNewId = $(newId);
+        (_a = existingElementByNewId === null || existingElementByNewId === void 0 ? void 0 : existingElementByNewId.parentNode) === null || _a === void 0 ? void 0 : _a.removeChild(existingElementByNewId);
+        var clone = elementToClone.cloneNode(true);
+        clone.id = newId;
+        var fullmatrix = "";
+        while (parent != animationSurface.parentNode &&
+            parent != null &&
+            parent != document) {
+            var styleOfParent = window.getComputedStyle(parent);
+            var transformationMatrixOfParent = styleOfParent.transform;
+            if (transformationMatrixOfParent &&
+                transformationMatrixOfParent != "none") {
+                fullmatrix += " " + transformationMatrixOfParent;
+            }
+            parent = parent.parentNode;
+        }
+        animationSurface.appendChild(clone);
+        var cloneRect = clone.getBoundingClientRect();
+        var offsetY = centerY - cloneRect.height / 2 - cloneRect.y;
+        var offsetX = centerX - cloneRect.width / 2 - cloneRect.x;
+        clone.style.left = offsetX + "px";
+        clone.style.top = offsetY + "px";
+        clone.style.transform = fullmatrix;
+        clone.style.position = "absolute";
+        return clone;
+    }
+    exports.cloneOnAnimationSurface = cloneOnAnimationSurface;
+    function moveElementOnAnimationSurface(elementToMoveId, newParentId, durationInMs) {
+        var _a;
+        if (durationInMs === void 0) { durationInMs = 1000; }
+        var elementToMove = $(elementToMoveId);
+        var newParent = $(newParentId);
+        console.log("Cloning mobile object");
+        var clone = cloneOnAnimationSurface(elementToMove.id, "_animated");
+        if (!clone) {
+            console.error("Clone not found");
+            return Promise.reject("Clone not found");
+        }
+        console.log("Making it opaque");
+        elementToMove.style.opacity = "0.25";
+        console.log("Adding the original to new parent");
+        newParent.appendChild(elementToMove);
+        console.log("Cloning mobile object when it's already in new place, to have destination coordinates");
+        var temporaryDestinationElement = cloneOnAnimationSurface(elementToMove.id, "_animation_destination");
+        if (!temporaryDestinationElement) {
+            console.error("Destination not found");
+            return Promise.reject("Destination not found");
+        }
+        console.log("Transitioning the clone to where the second clone is pointing");
+        clone.style.position = "absolute";
+        clone.style.transitionDuration = durationInMs + "ms";
+        clone.style.left = temporaryDestinationElement.style.left;
+        clone.style.top = temporaryDestinationElement.style.top;
+        clone.style.transform = temporaryDestinationElement.style.transform;
+        (_a = temporaryDestinationElement.parentNode) === null || _a === void 0 ? void 0 : _a.removeChild(temporaryDestinationElement);
+        return new Promise(function (resolve) {
+            setTimeout(function () {
+                elementToMove.style.removeProperty("opacity");
+                if (clone && clone.parentNode)
+                    clone.parentNode.removeChild(clone);
+                resolve();
+            }, durationInMs);
+        });
+    }
+    exports.moveElementOnAnimationSurface = moveElementOnAnimationSurface;
+});
+define("src/client/gui/Spells", ["require", "exports", "src/client/common/Templates", "src/client/gui/animations"], function (require, exports, Templates_2, animations_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Spells = void 0;
     var Spells = (function () {
-        function Spells(containerId, spells) {
+        function Spells(containerId, spells, gui) {
             this.containerId = containerId;
             this.spells = spells;
+            this.gui = gui;
             this.spellClickHandlers = [];
             this.spellClickedListeners = [];
-            this.addSpellsToDOMAndMakeThenClickable(containerId, spells);
+            this.addSpellsToDOMAndMakeThenClickable(spells);
         }
-        Spells.prototype.addSpellsToDOMAndMakeThenClickable = function (containerId, spells) {
+        Spells.prototype.addSpellsToDOMAndMakeThenClickable = function (spells) {
             for (var _i = 0, spells_2 = spells; _i < spells_2.length; _i++) {
                 var spell = spells_2[_i];
                 var spellBlock = Templates_2.Templates.spell(spell);
-                dojo.place(spellBlock, containerId);
+                dojo.place(spellBlock, this.containerId);
             }
             this.makeSpellsClickable();
         };
@@ -574,18 +668,17 @@ define("src/client/gui/Spells", ["require", "exports", "src/client/common/Templa
             }
             this.spells = this.spells.filter(function (s) { return s.number !== spell.number; });
         };
-        Spells.prototype.getIdOfSpellElement = function (spell) {
-            return "spell_".concat(spell.number);
-        };
         Spells.prototype.replaceSpells = function (spells) {
             dojo.empty(this.containerId);
             this.spells = spells;
-            this.addSpellsToDOMAndMakeThenClickable(this.containerId, spells);
+            this.addSpellsToDOMAndMakeThenClickable(spells);
         };
         Spells.prototype.addSpell = function (spell) {
             this.spells.push(spell);
-            var spellBlock = Templates_2.Templates.spell(spell);
-            dojo.place(spellBlock, this.containerId);
+            if (!this.gui.spellExistsOnBoard(spell)) {
+                this.gui.spawnSpellOnBoard(spell);
+            }
+            (0, animations_1.moveElementOnAnimationSurface)(Templates_2.Templates.idOfSpell(spell), this.containerId, 2000);
             this.makeSpellsUnclickable();
             this.makeSpellsClickable();
         };
@@ -593,7 +686,7 @@ define("src/client/gui/Spells", ["require", "exports", "src/client/common/Templa
     }());
     exports.Spells = Spells;
 });
-define("src/client/gui/ElementumGameInterface", ["require", "exports", "bgagame/elementum", "src/client/gui/Crystals", "src/client/gui/PlayerBoard", "src/client/gui/Spells"], function (require, exports, elementum_3, Crystals_1, PlayerBoard_1, Spells_1) {
+define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/client/gui/Crystals", "src/client/gui/PlayerBoard", "src/client/gui/Spells", "src/client/gui/animations", "src/client/common/Templates"], function (require, exports, Crystals_1, PlayerBoard_1, Spells_1, animations_2, Templates_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ElementumGameInterface = void 0;
@@ -620,10 +713,10 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "bgagame/
             this.spellPool.whenSpellClicked(onSpellClicked);
         };
         ElementumGameInterface.prototype.buildSpellPool = function (spellPool) {
-            this.spellPool = new Spells_1.Spells("spell-pool", spellPool);
+            this.spellPool = new Spells_1.Spells("spell-pool", spellPool, this);
         };
         ElementumGameInterface.prototype.buildPlayerHand = function (playerHand) {
-            this.playerHand = new Spells_1.Spells("current-player-hand", playerHand);
+            this.playerHand = new Spells_1.Spells("current-player-hand", playerHand, this);
         };
         ElementumGameInterface.prototype.buildPlayerBoards = function (playerBoards) {
             var _this = this;
@@ -632,19 +725,20 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "bgagame/
                 return [playerId, new PlayerBoard_1.PlayerBoard(playerId, playerBoard, _this.core)];
             }));
         };
-        ElementumGameInterface.prototype.moveSpellFromHandToBoard = function (playerId, spell) {
-            var _this = this;
-            var spellId = this.playerHand.getIdOfSpellElement(spell);
-            var columnId = this.playerBoards[playerId].getIdOfElementColumnForCurrentPlayer(spell.element);
-            var animationId = elementum_3.Elementum.getInstance().slideToObject(spellId, columnId, 20000, 1000);
-            dojo.connect(animationId, "onEnd", function () {
-                _this.playerHand.removeSpell(spell);
-                _this.putSpellOnBoard(playerId, spell);
-            });
-            animationId.play();
-        };
         ElementumGameInterface.prototype.putSpellOnBoard = function (playerId, spell) {
-            this.playerBoards[playerId].putSpellOnBoard(spell);
+            if (!this.spellExistsOnBoard(spell)) {
+                this.spawnSpellOnBoard(spell);
+            }
+            var columnId = Templates_3.Templates.idOfSpellColumn(playerId, spell.element);
+            var spellId = Templates_3.Templates.idOfSpell(spell);
+            (0, animations_2.moveElementOnAnimationSurface)(spellId, columnId, 2000);
+        };
+        ElementumGameInterface.prototype.spellExistsOnBoard = function (spell) {
+            return !!$(Templates_3.Templates.idOfSpell(spell));
+        };
+        ElementumGameInterface.prototype.spawnSpellOnBoard = function (spell) {
+            var spellTemplate = Templates_3.Templates.spell(spell);
+            dojo.place(spellTemplate, "cards-spawn-point");
         };
         ElementumGameInterface.prototype.replaceHand = function (hand) {
             this.playerHand.replaceSpells(hand);
@@ -666,6 +760,24 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "bgagame/
         };
         ElementumGameInterface.prototype.removeSpellInSpellPool = function (spellNumber) {
             this.spellPool.removeSpell(this.core.getSpellByNumber(spellNumber));
+        };
+        ElementumGameInterface.prototype.pickSpell2 = function (spellNumber) {
+            var pickedSpellElement = $("spell_".concat(spellNumber));
+            if (pickedSpellElement) {
+                dojo.addClass(pickedSpellElement, "picked");
+            }
+            else {
+                console.error("Couldn't find spell with number", spellNumber);
+            }
+        };
+        ElementumGameInterface.prototype.unpickSpell2 = function (spellNumber) {
+            var pickedSpellElement = $("spell_".concat(spellNumber));
+            if (pickedSpellElement) {
+                dojo.removeClass(pickedSpellElement, "picked");
+            }
+            else {
+                console.error("Couldn't find spell with number", spellNumber);
+            }
         };
         return ElementumGameInterface;
     }());
@@ -790,13 +902,6 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
                 _this.state.spellOnSpellPoolClicked(spell);
             });
             console.log("Ending game setup");
-            dojo.connect($("animation-test-button"), "onclick", function (event) {
-                var animationId = _this.slideToObject("actor", "box2", 2000, 500);
-                dojo.connect(animationId, "onEnd", function () {
-                    _this.attachToNewParentNoDestroy("actor", "box2");
-                });
-                animationId.play();
-            });
         };
         Elementum.prototype.getSpellByNumber = function (spellNumber) {
             return this.allSpells[spellNumber - 1];
@@ -869,12 +974,7 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
                 console.log("Spell played on board notification", notification);
                 var playerId = notification.args.player_id;
                 var spell = notification.args.spell;
-                if (_this.isCurrentPlayer(playerId)) {
-                    _this.gui.moveSpellFromHandToBoard(playerId, spell);
-                }
-                else {
-                    _this.gui.putSpellOnBoard(playerId, spell);
-                }
+                _this.gui.putSpellOnBoard(playerId, spell);
             });
             this.on("newHand").do(function (notification) {
                 _this.gui.replaceHand(notification.args.newHand);
@@ -882,10 +982,7 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
             this.on("newSpellPoolCard").do(function (notification) {
                 var newSpellNumber = notification.args
                     .newSpellNumber;
-                var oldSpellNumber = notification.args
-                    .oldSpellNumber;
                 _this.gui.putSpellInSpellPool(newSpellNumber);
-                _this.gui.removeSpellInSpellPool(oldSpellNumber);
             });
             this.on("youPaidCrystalForSpellPool").do(function (notification) {
                 _this.gui.crystals.moveCrystalFromPlayerToPile(_this.getCurrentPlayerId().toString());

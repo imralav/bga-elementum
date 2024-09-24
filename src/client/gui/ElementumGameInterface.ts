@@ -5,6 +5,9 @@ import { Spell } from "../spells/Spell";
 import { Crystals } from "./Crystals";
 import { PlayerBoard } from "./PlayerBoard";
 import { OnSpellClicked, Spells } from "./Spells";
+import { moveElementOnAnimationSurface } from "./animations";
+import { Templates } from "../common/Templates";
+import { Element } from "../spells/elementum.types";
 
 export interface ElementumGameInterfaceInput {
   spellPool: Spell[];
@@ -63,11 +66,11 @@ export class ElementumGameInterface {
   }
 
   private buildSpellPool(spellPool: Spell[]) {
-    this.spellPool = new Spells("spell-pool", spellPool);
+    this.spellPool = new Spells("spell-pool", spellPool, this);
   }
 
   private buildPlayerHand(playerHand: Spell[]) {
-    this.playerHand = new Spells("current-player-hand", playerHand);
+    this.playerHand = new Spells("current-player-hand", playerHand, this);
   }
 
   buildPlayerBoards(playerBoards: Gamedatas["playerBoards"]) {
@@ -78,30 +81,22 @@ export class ElementumGameInterface {
     );
   }
 
-  moveSpellFromHandToBoard(playerId: PlayerId, spell: Spell) {
-    const spellId = this.playerHand.getIdOfSpellElement(spell);
-    const columnId = this.playerBoards[
-      playerId
-    ]!.getIdOfElementColumnForCurrentPlayer(spell.element);
-    const animationId = Elementum.getInstance().slideToObject(
-      spellId,
-      columnId,
-      20000,
-      1000
-    );
-    dojo.connect(animationId, "onEnd", () => {
-      this.playerHand.removeSpell(spell);
-      this.putSpellOnBoard(playerId, spell);
-    });
-    animationId.play();
-    // this.playerHand.removeSpell(spell);
-    // setTimeout(() => {
-    //   this.putSpellOnBoard(playerId, spell);
-    // });
+  putSpellOnBoard(playerId: PlayerId, spell: Spell) {
+    if (!this.spellExistsOnBoard(spell)) {
+      this.spawnSpellOnBoard(spell);
+    }
+    const columnId = Templates.idOfSpellColumn(playerId, spell.element);
+    const spellId = Templates.idOfSpell(spell);
+    moveElementOnAnimationSurface(spellId, columnId, 2000);
   }
 
-  putSpellOnBoard(playerId: PlayerId, spell: Spell) {
-    this.playerBoards[playerId]!.putSpellOnBoard(spell);
+  spellExistsOnBoard(spell: Spell) {
+    return !!$(Templates.idOfSpell(spell));
+  }
+
+  spawnSpellOnBoard(spell: Spell) {
+    const spellTemplate = Templates.spell(spell);
+    dojo.place(spellTemplate, "cards-spawn-point");
   }
 
   replaceHand(hand: Spell[]) {
@@ -130,5 +125,25 @@ export class ElementumGameInterface {
 
   removeSpellInSpellPool(spellNumber: Spell["number"]) {
     this.spellPool.removeSpell(this.core.getSpellByNumber(spellNumber)!);
+  }
+
+  //TODO: do zaorania
+  pickSpell2(spellNumber: Spell["number"]) {
+    const pickedSpellElement = $(`spell_${spellNumber}`) as HTMLElement;
+    if (pickedSpellElement) {
+      dojo.addClass(pickedSpellElement, "picked");
+    } else {
+      console.error("Couldn't find spell with number", spellNumber);
+    }
+  }
+
+  //TODO: do zaorania
+  unpickSpell2(spellNumber: Spell["number"]) {
+    const pickedSpellElement = $(`spell_${spellNumber}`) as HTMLElement;
+    if (pickedSpellElement) {
+      dojo.removeClass(pickedSpellElement, "picked");
+    } else {
+      console.error("Couldn't find spell with number", spellNumber);
+    }
   }
 }

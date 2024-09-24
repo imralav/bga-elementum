@@ -75,13 +75,6 @@ export class Elementum extends CommonMixer(Gamegui) {
     });
 
     console.log("Ending game setup");
-    dojo.connect($("animation-test-button"), "onclick", (event: Event) => {
-      const animationId = this.slideToObject("actor", "box2", 2000, 500);
-      dojo.connect(animationId, "onEnd", () => {
-        this.attachToNewParentNoDestroy("actor", "box2");
-      });
-      animationId.play();
-    });
   }
 
   getSpellByNumber(spellNumber: Spell["number"]) {
@@ -195,11 +188,7 @@ export class Elementum extends CommonMixer(Gamegui) {
       console.log("Spell played on board notification", notification);
       const playerId = notification.args!.player_id as PlayerId;
       const spell = notification.args!.spell as Spell;
-      if (this.isCurrentPlayer(playerId)) {
-        this.gui.moveSpellFromHandToBoard(playerId, spell);
-      } else {
-        this.gui.putSpellOnBoard(playerId, spell);
-      }
+      this.gui.putSpellOnBoard(playerId, spell);
     });
     this.on("newHand").do((notification: Notif) => {
       this.gui.replaceHand(notification.args!.newHand as Spell[]);
@@ -207,10 +196,10 @@ export class Elementum extends CommonMixer(Gamegui) {
     this.on("newSpellPoolCard").do((notification: Notif) => {
       const newSpellNumber = notification.args!
         .newSpellNumber as Spell["number"];
-      const oldSpellNumber = notification.args!
-        .oldSpellNumber as Spell["number"];
+      // const oldSpellNumber = notification.args!
+      //   .oldSpellNumber as Spell["number"];
       this.gui.putSpellInSpellPool(newSpellNumber);
-      this.gui.removeSpellInSpellPool(oldSpellNumber);
+      // this.gui.removeSpellInSpellPool(oldSpellNumber);
     });
     this.on("youPaidCrystalForSpellPool").do((notification: Notif) => {
       this.gui.crystals.moveCrystalFromPlayerToPile(

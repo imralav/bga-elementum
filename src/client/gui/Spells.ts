@@ -1,6 +1,8 @@
 import { Spell } from "../spells/Spell";
 import { Handle } from "dojo";
 import { Templates } from "../common/Templates";
+import { ElementumGameInterface } from "./ElementumGameInterface";
+import { moveElementOnAnimationSurface } from "./animations";
 
 export type OnSpellClicked = (spell: Spell) => void;
 
@@ -14,17 +16,18 @@ export class Spells {
   private pickedSpellElement?: HTMLElement;
   private spellClickedListeners: OnSpellClicked[] = [];
 
-  constructor(private containerId: string, private spells: Spell[]) {
-    this.addSpellsToDOMAndMakeThenClickable(containerId, spells);
+  constructor(
+    private containerId: string,
+    private spells: Spell[],
+    private gui: ElementumGameInterface
+  ) {
+    this.addSpellsToDOMAndMakeThenClickable(spells);
   }
 
-  private addSpellsToDOMAndMakeThenClickable(
-    containerId: string,
-    spells: Spell[]
-  ) {
+  private addSpellsToDOMAndMakeThenClickable(spells: Spell[]) {
     for (const spell of spells) {
       const spellBlock = Templates.spell(spell);
-      dojo.place(spellBlock, containerId); //current-player-hand
+      dojo.place(spellBlock, this.containerId); //current-player-hand
     }
     this.makeSpellsClickable();
   }
@@ -107,21 +110,22 @@ export class Spells {
     this.spells = this.spells.filter((s) => s.number !== spell.number);
   }
 
-  getIdOfSpellElement(spell: Spell) {
-    return `spell_${spell.number}`;
-  }
-
   replaceSpells(spells: Spell[]) {
-    //TODO: animacja: istniejące karty wyjeżdżają w górę poza ekran, potem wjeżdżają nowe
     dojo.empty(this.containerId);
     this.spells = spells;
-    this.addSpellsToDOMAndMakeThenClickable(this.containerId, spells);
+    this.addSpellsToDOMAndMakeThenClickable(spells);
   }
 
   addSpell(spell: Spell) {
     this.spells.push(spell);
-    const spellBlock = Templates.spell(spell);
-    dojo.place(spellBlock, this.containerId);
+    if (!this.gui.spellExistsOnBoard(spell)) {
+      this.gui.spawnSpellOnBoard(spell);
+    }
+    moveElementOnAnimationSurface(
+      Templates.idOfSpell(spell),
+      this.containerId,
+      2000
+    );
     this.makeSpellsUnclickable();
     this.makeSpellsClickable();
   }

@@ -9,13 +9,7 @@
 -- See http://en.boardgamearena.com/#!doc/Studio for more information.
 -------
 -->
-<button id="animation-test-button">Animation test</button>
-<div id="animation-test-container">
-  <div id="box1">
-    <div id="actor">Siemaneczko</div>
-  </div>
-  <div id="box2"></div>
-</div>
+<div id="cards-spawn-point"></div>
 <div id="layout">
   <div id="spell-pool-and-current-player-hand">
     <div id="spell-pool-container" class="frame">
@@ -33,6 +27,7 @@
   </div>
   <div id="board"></div>
 </div>
+<div id="animation-surface"></div>
 
 <script type="text/javascript">
   // Spells, element sources
