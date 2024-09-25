@@ -201,72 +201,6 @@ define("src/client/spells/Spell", ["require", "exports"], function (require, exp
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
 });
-define("src/client/api/ActionsAPI", ["require", "exports", "bgagame/elementum"], function (require, exports, elementum_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.ActionsAPI = void 0;
-    var ActionsAPI = (function () {
-        function ActionsAPI() {
-        }
-        ActionsAPI.pickSpell = function (spellNumber) {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    return [2, elementum_1.Elementum.getInstance()
-                            .performAction("actPickSpell", { spellNumber: spellNumber })
-                            .catch(function () {
-                            throw new Error("Error picking spell");
-                        })];
-                });
-            });
-        };
-        ActionsAPI.cancelSpellChoice = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    return [2, elementum_1.Elementum.getInstance()
-                            .performAction("actCancelSpellChoice")
-                            .catch(function () {
-                            throw new Error("Error cancelling spell choice");
-                        })];
-                });
-            });
-        };
-        ActionsAPI.playSpell = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    return [2, elementum_1.Elementum.getInstance()
-                            .performAction("actPlaySpell")
-                            .catch(function () {
-                            throw new Error("Error playing spell");
-                        })];
-                });
-            });
-        };
-        ActionsAPI.useSpellPool = function (spellFromPoolNumber) {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    return [2, elementum_1.Elementum.getInstance()
-                            .performAction("actUseSpellPool", { spellFromPoolNumber: spellFromPoolNumber })
-                            .catch(function () {
-                            throw new Error("Error using spell pool");
-                        })];
-                });
-            });
-        };
-        ActionsAPI.cancelDraftChoice = function () {
-            return __awaiter(this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                    return [2, elementum_1.Elementum.getInstance()
-                            .performPossibleAction("actCancelDraftChoice")
-                            .catch(function () {
-                            throw new Error("Error cancelling draft choice");
-                        })];
-                });
-            });
-        };
-        return ActionsAPI;
-    }());
-    exports.ActionsAPI = ActionsAPI;
-});
 define("src/client/common/utils", ["require", "exports"], function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -293,7 +227,34 @@ define("src/client/common/utils", ["require", "exports"], function (require, exp
     }
     exports.getIconForElement = getIconForElement;
 });
-define("src/client/gui/Crystals", ["require", "exports", "ebg/zone", "src/client/common/utils"], function (require, exports, Zone, utils_1) {
+define("src/client/common/Templates", ["require", "exports", "bgagame/elementum", "src/client/common/utils"], function (require, exports, elementum_1, utils_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Templates = void 0;
+    var Templates = (function () {
+        function Templates() {
+        }
+        Templates.spell = function (spell) {
+            return elementum_1.Elementum.getInstance().format_block("jstpl_spell", {
+                spellNumber: spell.number,
+                spellSummaryData: "".concat(spell.number, ": ").concat(spell.name, "\n(").concat((0, utils_1.getIconForElement)(spell.element), ")"),
+                element: spell.element,
+            });
+        };
+        Templates.idOfSpell = function (spell) {
+            return "spell_".concat(spell.number);
+        };
+        Templates.idOfSpellColumn = function (playerId, element) {
+            return "spells-column-".concat(playerId, "-").concat(element);
+        };
+        Templates.textBeforeCancelButton = function (text) {
+            return "<span id=\"text-before-cancel-button\">".concat(text, "</span>");
+        };
+        return Templates;
+    }());
+    exports.Templates = Templates;
+});
+define("src/client/gui/Crystals", ["require", "exports", "ebg/zone", "src/client/common/utils"], function (require, exports, Zone, utils_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Crystals = void 0;
@@ -360,7 +321,7 @@ define("src/client/gui/Crystals", ["require", "exports", "ebg/zone", "src/client
             var _loop_1 = function (playerId) {
                 var amount = +((_a = this_1.amountOfCrystalsPerPlayer[playerId]) !== null && _a !== void 0 ? _a : 0);
                 for (var i = 0; i < amount; i++) {
-                    (0, utils_1.doAfter)(1000 * (2 + i), function () {
+                    (0, utils_2.doAfter)(1000 * (2 + i), function () {
                         return _this.moveCrystalFromPileToPlayer(playerId);
                     });
                 }
@@ -384,7 +345,7 @@ define("src/client/gui/Crystals", ["require", "exports", "ebg/zone", "src/client
         Crystals.prototype.moveCrystalsFromPlayerToPile = function (playerId, amount) {
             var _this = this;
             for (var i = 0; i < amount; i++) {
-                (0, utils_1.doAfter)(1000 * (2 + i), function () { return _this.moveCrystalFromPlayerToPile(playerId); });
+                (0, utils_2.doAfter)(1000 * (2 + i), function () { return _this.moveCrystalFromPlayerToPile(playerId); });
             }
         };
         Crystals.prototype.moveCrystalFromPlayerToPile = function (playerId) {
@@ -399,34 +360,10 @@ define("src/client/gui/Crystals", ["require", "exports", "ebg/zone", "src/client
             return crystal.id;
         };
         Crystals.CRYSTALS_PILE_ID = "main-crystals-pile";
-        Crystals.CRYSTAL_SIZE = 25;
+        Crystals.CRYSTAL_SIZE = 16;
         return Crystals;
     }());
     exports.Crystals = Crystals;
-});
-define("src/client/common/Templates", ["require", "exports", "bgagame/elementum", "src/client/common/utils"], function (require, exports, elementum_2, utils_2) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.Templates = void 0;
-    var Templates = (function () {
-        function Templates() {
-        }
-        Templates.spell = function (spell) {
-            return elementum_2.Elementum.getInstance().format_block("jstpl_spell", {
-                spellNumber: spell.number,
-                spellSummaryData: "".concat(spell.number, ": ").concat(spell.name, "\n(").concat((0, utils_2.getIconForElement)(spell.element), ")"),
-                element: spell.element,
-            });
-        };
-        Templates.idOfSpell = function (spell) {
-            return "spell_".concat(spell.number);
-        };
-        Templates.idOfSpellColumn = function (playerId, element) {
-            return "spells-column-".concat(playerId, "-").concat(element);
-        };
-        return Templates;
-    }());
-    exports.Templates = Templates;
 });
 define("src/client/gui/PlayerBoard", ["require", "exports", "src/client/common/utils", "src/client/common/Templates"], function (require, exports, utils_3, Templates_1) {
     "use strict";
@@ -486,6 +423,114 @@ define("src/client/gui/PlayerBoard", ["require", "exports", "src/client/common/u
         return PlayerBoard;
     }());
     exports.PlayerBoard = PlayerBoard;
+});
+define("src/client/gui/Spells", ["require", "exports", "src/client/common/Templates"], function (require, exports, Templates_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Spells = void 0;
+    var Spells = (function () {
+        function Spells(containerId, spells, gui) {
+            this.containerId = containerId;
+            this.spells = spells;
+            this.gui = gui;
+            this.spellClickHandlers = [];
+            this.spellClickedListeners = [];
+            this.addSpellsToDOMAndMakeThenClickable(spells);
+        }
+        Spells.prototype.addSpellsToDOMAndMakeThenClickable = function (spells) {
+            for (var _i = 0, spells_2 = spells; _i < spells_2.length; _i++) {
+                var spell = spells_2[_i];
+                var spellBlock = Templates_2.Templates.spell(spell);
+                dojo.place(spellBlock, this.containerId);
+            }
+            this.makeSpellsClickable();
+        };
+        Spells.prototype.whenSpellClicked = function (onSpellClicked) {
+            this.spellClickedListeners.push(onSpellClicked);
+        };
+        Spells.prototype.makeSpellsClickable = function () {
+            var _this = this;
+            this.forEachSpellInDom(function (spell) {
+                _this.makeSpellNodeClickable(spell);
+            });
+        };
+        Spells.prototype.makeSpellNodeClickable = function (spell) {
+            var _this = this;
+            dojo.addClass(spell, "clickable");
+            var handler = dojo.connect(spell, "onclick", function (evt) {
+                _this.pickSpellFromEvent(evt).then(function (spell) {
+                    _this.spellClickedListeners.forEach(function (listener) { return listener(spell); });
+                });
+            });
+            this.spellClickHandlers.push(handler);
+        };
+        Spells.prototype.forEachSpellInDom = function (callback) {
+            dojo
+                .query("#".concat(this.containerId, " div.spell"))
+                .forEach(function (spell) { return callback(spell); });
+        };
+        Spells.prototype.pickSpellFromEvent = function (evt) {
+            this.pickedSpellElement = evt.target;
+            var spellNumber = this.spellNumberFromElementId(this.pickedSpellElement.id);
+            if (spellNumber) {
+                dojo.stopEvent(evt);
+                console.log("Picking spell from event", spellNumber);
+                var spell = this.getSpellByNumber(+spellNumber);
+                if (spell) {
+                    return Promise.resolve(spell);
+                }
+                else {
+                    return Promise.reject("Couldn't find spell with number " + spellNumber);
+                }
+            }
+            else {
+                return Promise.reject("Couldn't find spell");
+            }
+        };
+        Spells.prototype.spellNumberFromElementId = function (elementId) {
+            return +elementId.split("_")[1];
+        };
+        Spells.prototype.getSpellByNumber = function (spellNumber) {
+            return this.spells.find(function (spell) { return spell.number === spellNumber; });
+        };
+        Spells.prototype.pickSpell = function (spellNumber) {
+            this.pickedSpellElement = $("spell_".concat(spellNumber));
+            if (this.pickedSpellElement) {
+                this.gui.selectSpell(spellNumber);
+            }
+        };
+        Spells.prototype.unpickSpell = function () {
+            if (this.pickedSpellElement) {
+                this.gui.deselectSpell(this.spellNumberFromElementId(this.pickedSpellElement.id));
+                this.pickedSpellElement = undefined;
+            }
+        };
+        Spells.prototype.removeSpell = function (spell) {
+            var spellElement = $("spell_".concat(spell.number));
+            if (spellElement) {
+                dojo.destroy(spellElement);
+            }
+            else {
+                console.error("Couldn't find spell with number", spell.number);
+            }
+            this.spells = this.spells.filter(function (s) { return s.number !== spell.number; });
+        };
+        Spells.prototype.replaceSpells = function (spells) {
+            dojo.empty(this.containerId);
+            this.spells = spells;
+            this.addSpellsToDOMAndMakeThenClickable(spells);
+        };
+        Spells.prototype.addSpell = function (spell) {
+            this.spells.push(spell);
+            var spellNode = $(Templates_2.Templates.idOfSpell(spell));
+            if (!spellNode) {
+                return;
+            }
+            this.makeSpellNodeClickable(spellNode);
+        };
+        return Spells;
+    }());
+    exports.Spells = Spells;
 });
 define("src/client/gui/animations", ["require", "exports"], function (require, exports) {
     "use strict";
@@ -574,119 +619,7 @@ define("src/client/gui/animations", ["require", "exports"], function (require, e
     }
     exports.moveElementOnAnimationSurface = moveElementOnAnimationSurface;
 });
-define("src/client/gui/Spells", ["require", "exports", "src/client/common/Templates", "src/client/gui/animations"], function (require, exports, Templates_2, animations_1) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.Spells = void 0;
-    var Spells = (function () {
-        function Spells(containerId, spells, gui) {
-            this.containerId = containerId;
-            this.spells = spells;
-            this.gui = gui;
-            this.spellClickHandlers = [];
-            this.spellClickedListeners = [];
-            this.addSpellsToDOMAndMakeThenClickable(spells);
-        }
-        Spells.prototype.addSpellsToDOMAndMakeThenClickable = function (spells) {
-            for (var _i = 0, spells_2 = spells; _i < spells_2.length; _i++) {
-                var spell = spells_2[_i];
-                var spellBlock = Templates_2.Templates.spell(spell);
-                dojo.place(spellBlock, this.containerId);
-            }
-            this.makeSpellsClickable();
-        };
-        Spells.prototype.whenSpellClicked = function (onSpellClicked) {
-            this.spellClickedListeners.push(onSpellClicked);
-        };
-        Spells.prototype.makeSpellsClickable = function () {
-            var _this = this;
-            this.forEachSpellInDom(function (spell) {
-                dojo.addClass(spell, "clickable");
-                var handler = dojo.connect(spell, "onclick", function (evt) {
-                    _this.pickSpellFromEvent(evt).then(function (spell) {
-                        _this.spellClickedListeners.forEach(function (listener) { return listener(spell); });
-                    });
-                });
-                _this.spellClickHandlers.push(handler);
-            });
-        };
-        Spells.prototype.forEachSpellInDom = function (callback) {
-            dojo
-                .query("#".concat(this.containerId, " div.spell"))
-                .forEach(function (spell) { return callback(spell); });
-        };
-        Spells.prototype.makeSpellsUnclickable = function () {
-            this.spellClickHandlers.forEach(function (handler) { return dojo.disconnect(handler); });
-            this.spellClickHandlers = [];
-            this.forEachSpellInDom(function (spell) {
-                dojo.removeClass(spell, "clickable");
-            });
-        };
-        Spells.prototype.pickSpellFromEvent = function (evt) {
-            this.pickedSpellElement = evt.target;
-            var spellNumber = this.pickedSpellElement.id.split("_")[1];
-            if (spellNumber) {
-                dojo.stopEvent(evt);
-                console.log("Picking spell from event", spellNumber);
-                var spell = this.getSpellByNumber(+spellNumber);
-                if (spell) {
-                    return Promise.resolve(spell);
-                }
-                else {
-                    return Promise.reject("Couldn't find spell with number " + spellNumber);
-                }
-            }
-            else {
-                return Promise.reject("Couldn't find spell");
-            }
-        };
-        Spells.prototype.getSpellByNumber = function (spellNumber) {
-            return this.spells.find(function (spell) { return spell.number === spellNumber; });
-        };
-        Spells.prototype.pickSpell = function (spellNumber) {
-            this.pickedSpellElement = $("spell_".concat(spellNumber));
-            if (this.pickedSpellElement) {
-                dojo.addClass(this.pickedSpellElement, "picked");
-            }
-            else {
-                console.error("Couldn't find spell with number", spellNumber);
-            }
-        };
-        Spells.prototype.unpickSpell = function () {
-            if (this.pickedSpellElement) {
-                dojo.removeClass(this.pickedSpellElement, "picked");
-                this.pickedSpellElement = undefined;
-            }
-        };
-        Spells.prototype.removeSpell = function (spell) {
-            var spellElement = $("spell_".concat(spell.number));
-            if (spellElement) {
-                dojo.destroy(spellElement);
-            }
-            else {
-                console.error("Couldn't find spell with number", spell.number);
-            }
-            this.spells = this.spells.filter(function (s) { return s.number !== spell.number; });
-        };
-        Spells.prototype.replaceSpells = function (spells) {
-            dojo.empty(this.containerId);
-            this.spells = spells;
-            this.addSpellsToDOMAndMakeThenClickable(spells);
-        };
-        Spells.prototype.addSpell = function (spell) {
-            this.spells.push(spell);
-            if (!this.gui.spellExistsOnBoard(spell)) {
-                this.gui.spawnSpellOnBoard(spell);
-            }
-            (0, animations_1.moveElementOnAnimationSurface)(Templates_2.Templates.idOfSpell(spell), this.containerId, 2000);
-            this.makeSpellsUnclickable();
-            this.makeSpellsClickable();
-        };
-        return Spells;
-    }());
-    exports.Spells = Spells;
-});
-define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/client/gui/Crystals", "src/client/gui/PlayerBoard", "src/client/gui/Spells", "src/client/gui/animations", "src/client/common/Templates"], function (require, exports, Crystals_1, PlayerBoard_1, Spells_1, animations_2, Templates_3) {
+define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/client/common/Templates", "src/client/gui/Crystals", "src/client/gui/PlayerBoard", "src/client/gui/Spells", "src/client/gui/animations"], function (require, exports, Templates_3, Crystals_1, PlayerBoard_1, Spells_1, animations_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ElementumGameInterface = void 0;
@@ -694,6 +627,7 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
         function ElementumGameInterface(spellPool, playerHand, crystals, core, playerBoards) {
             this.crystals = crystals;
             this.core = core;
+            this.animationDurationInMs = 2000;
             this.buildSpellPool(spellPool);
             this.buildPlayerHand(playerHand);
             this.crystals.putCrystalsOnBoardAndInPlayerPanels();
@@ -720,10 +654,10 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
         };
         ElementumGameInterface.prototype.buildPlayerBoards = function (playerBoards) {
             var _this = this;
-            this.playerBoards = Object.fromEntries(Object.entries(playerBoards).map(function (_a) {
+            Object.entries(playerBoards).map(function (_a) {
                 var playerId = _a[0], playerBoard = _a[1];
-                return [playerId, new PlayerBoard_1.PlayerBoard(playerId, playerBoard, _this.core)];
-            }));
+                new PlayerBoard_1.PlayerBoard(playerId, playerBoard, _this.core);
+            });
         };
         ElementumGameInterface.prototype.putSpellOnBoard = function (playerId, spell) {
             if (!this.spellExistsOnBoard(spell)) {
@@ -731,22 +665,23 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
             }
             var columnId = Templates_3.Templates.idOfSpellColumn(playerId, spell.element);
             var spellId = Templates_3.Templates.idOfSpell(spell);
-            (0, animations_2.moveElementOnAnimationSurface)(spellId, columnId, 2000);
+            this.deselectSpell(spell.number);
+            (0, animations_1.moveElementOnAnimationSurface)(spellId, columnId, this.animationDurationInMs);
         };
         ElementumGameInterface.prototype.spellExistsOnBoard = function (spell) {
             return !!$(Templates_3.Templates.idOfSpell(spell));
         };
         ElementumGameInterface.prototype.spawnSpellOnBoard = function (spell) {
             var spellTemplate = Templates_3.Templates.spell(spell);
-            dojo.place(spellTemplate, "cards-spawn-point");
+            return dojo.place(spellTemplate, "cards-spawn-point");
         };
         ElementumGameInterface.prototype.replaceHand = function (hand) {
             this.playerHand.replaceSpells(hand);
         };
-        ElementumGameInterface.prototype.pickSpell = function (spellNumber) {
+        ElementumGameInterface.prototype.pickSpellOnHand = function (spellNumber) {
             this.playerHand.pickSpell(spellNumber);
         };
-        ElementumGameInterface.prototype.unpickSpell = function () {
+        ElementumGameInterface.prototype.unpickSpellOnHand = function () {
             this.playerHand.unpickSpell();
         };
         ElementumGameInterface.prototype.pickSpellOnSpellPool = function (spellNumber) {
@@ -756,12 +691,20 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
             this.spellPool.unpickSpell();
         };
         ElementumGameInterface.prototype.putSpellInSpellPool = function (spellNumber) {
-            this.spellPool.addSpell(this.core.getSpellByNumber(spellNumber));
+            var spell = this.core.getSpellByNumber(spellNumber);
+            if (!this.spellExistsOnBoard(spell)) {
+                this.spawnSpellOnBoard(spell);
+            }
+            var containerId = "spell-pool";
+            var spellId = Templates_3.Templates.idOfSpell(spell);
+            this.deselectSpell(spell.number);
+            (0, animations_1.moveElementOnAnimationSurface)(spellId, containerId, this.animationDurationInMs);
+            this.spellPool.addSpell(spell);
         };
         ElementumGameInterface.prototype.removeSpellInSpellPool = function (spellNumber) {
             this.spellPool.removeSpell(this.core.getSpellByNumber(spellNumber));
         };
-        ElementumGameInterface.prototype.pickSpell2 = function (spellNumber) {
+        ElementumGameInterface.prototype.selectSpell = function (spellNumber) {
             var pickedSpellElement = $("spell_".concat(spellNumber));
             if (pickedSpellElement) {
                 dojo.addClass(pickedSpellElement, "picked");
@@ -770,13 +713,10 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
                 console.error("Couldn't find spell with number", spellNumber);
             }
         };
-        ElementumGameInterface.prototype.unpickSpell2 = function (spellNumber) {
+        ElementumGameInterface.prototype.deselectSpell = function (spellNumber) {
             var pickedSpellElement = $("spell_".concat(spellNumber));
             if (pickedSpellElement) {
                 dojo.removeClass(pickedSpellElement, "picked");
-            }
-            else {
-                console.error("Couldn't find spell with number", spellNumber);
             }
         };
         return ElementumGameInterface;
@@ -794,20 +734,82 @@ define("src/client/states/NoopState", ["require", "exports"], function (require,
     var NoopState = (function () {
         function NoopState() {
         }
-        NoopState.prototype.spellClicked = function (spell) {
-            console.log("NoopState.spellClicked", spell);
-        };
-        NoopState.prototype.spellOnSpellPoolClicked = function (spell) {
-            console.log("NoopState.spellOnSpellPoolClicked", spell);
-        };
-        NoopState.prototype.onLeave = function () {
-            console.log("NoopState.onLeave");
-        };
+        NoopState.prototype.onEnter = function () { };
+        NoopState.prototype.onUpdateActionButtons = function (args) { };
+        NoopState.prototype.spellClicked = function (spell) { };
+        NoopState.prototype.spellOnSpellPoolClicked = function (spell) { };
+        NoopState.prototype.onLeave = function () { };
         return NoopState;
     }());
     exports.NoopState = NoopState;
 });
-define("src/client/states/PickSpellState", ["require", "exports", "src/client/api/ActionsAPI", "src/client/states/NoopState"], function (require, exports, ActionsAPI_1, NoopState_1) {
+define("src/client/ActionsAPI", ["require", "exports", "bgagame/elementum"], function (require, exports, elementum_2) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ActionsAPI = void 0;
+    var ActionsAPI = (function () {
+        function ActionsAPI() {
+        }
+        ActionsAPI.pickSpell = function (spellNumber) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2, elementum_2.Elementum.getInstance()
+                            .performAction("actPickSpell", { spellNumber: spellNumber })
+                            .catch(function () {
+                            throw new Error("Error picking spell");
+                        })];
+                });
+            });
+        };
+        ActionsAPI.cancelSpellChoice = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2, elementum_2.Elementum.getInstance()
+                            .performAction("actCancelSpellChoice")
+                            .catch(function () {
+                            throw new Error("Error cancelling spell choice");
+                        })];
+                });
+            });
+        };
+        ActionsAPI.playSpell = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2, elementum_2.Elementum.getInstance()
+                            .performAction("actPlaySpell")
+                            .catch(function () {
+                            throw new Error("Error playing spell");
+                        })];
+                });
+            });
+        };
+        ActionsAPI.useSpellPool = function (spellFromPoolNumber) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2, elementum_2.Elementum.getInstance()
+                            .performAction("actUseSpellPool", { spellFromPoolNumber: spellFromPoolNumber })
+                            .catch(function () {
+                            throw new Error("Error using spell pool");
+                        })];
+                });
+            });
+        };
+        ActionsAPI.cancelDraftChoice = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2, elementum_2.Elementum.getInstance()
+                            .performPossibleAction("actCancelDraftChoice")
+                            .catch(function () {
+                            throw new Error("Error cancelling draft choice");
+                        })];
+                });
+            });
+        };
+        return ActionsAPI;
+    }());
+    exports.ActionsAPI = ActionsAPI;
+});
+define("src/client/states/PickSpellState", ["require", "exports", "src/client/ActionsAPI", "src/client/states/NoopState"], function (require, exports, ActionsAPI_1, NoopState_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.PickSpellState = void 0;
@@ -824,7 +826,7 @@ define("src/client/states/PickSpellState", ["require", "exports", "src/client/ap
             ActionsAPI_1.ActionsAPI.pickSpell(spell.number)
                 .then(function () {
                 console.log("Picking spell", spell.number);
-                _this.gui.pickSpell(spell.number);
+                _this.gui.pickSpellOnHand(spell.number);
             })
                 .catch(function (error) {
                 console.error("Error picking spell", error);
@@ -834,17 +836,30 @@ define("src/client/states/PickSpellState", ["require", "exports", "src/client/ap
     }(NoopState_1.NoopState));
     exports.PickSpellState = PickSpellState;
 });
-define("src/client/states/SpellDestinationChoiceState", ["require", "exports", "src/client/api/ActionsAPI", "src/client/states/NoopState"], function (require, exports, ActionsAPI_2, NoopState_2) {
+define("src/client/states/SpellDestinationChoiceState", ["require", "exports", "src/client/ActionsAPI", "src/client/states/NoopState"], function (require, exports, ActionsAPI_2, NoopState_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.SpellDestinationChoiceState = void 0;
     var SpellDestinationChoiceState = (function (_super) {
         __extends(SpellDestinationChoiceState, _super);
-        function SpellDestinationChoiceState(gui) {
+        function SpellDestinationChoiceState(elementum, gui) {
             var _this = _super.call(this) || this;
+            _this.elementum = elementum;
             _this.gui = gui;
             return _this;
         }
+        SpellDestinationChoiceState.prototype.onEnter = function () {
+            this.elementum.setTextBeforeCancelButton(_(" to pick a Spell from the Spell Pool."));
+        };
+        SpellDestinationChoiceState.prototype.onUpdateActionButtons = function (args) {
+            var _this = this;
+            this.elementum.addActionButton("playSpellBtn", _("Play the Spell on your board"), function () { return ActionsAPI_2.ActionsAPI.playSpell(); });
+            this.elementum.addCancelButton(_("Cancel"), function () {
+                ActionsAPI_2.ActionsAPI.cancelSpellChoice().then(function () {
+                    _this.gui.unpickSpellOnHand();
+                });
+            });
+        };
         SpellDestinationChoiceState.prototype.spellOnSpellPoolClicked = function (spell) {
             var _this = this;
             console.log("Spell pool clicked", spell);
@@ -857,11 +872,52 @@ define("src/client/states/SpellDestinationChoiceState", ["require", "exports", "
                 console.error("Error picking spell pool", error);
             });
         };
+        SpellDestinationChoiceState.prototype.onLeave = function () {
+            this.elementum.clearTextAfterGeneralActions();
+        };
         return SpellDestinationChoiceState;
     }(NoopState_2.NoopState));
     exports.SpellDestinationChoiceState = SpellDestinationChoiceState;
 });
-define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook/common", "src/client/gui/ElementumGameInterface", "src/client/api/ActionsAPI", "src/client/states/NoopState", "src/client/states/PickSpellState", "src/client/states/SpellDestinationChoiceState", "ebg/counter"], function (require, exports, Gamegui, CommonMixer, ElementumGameInterface_1, ActionsAPI_3, NoopState_3, PickSpellState_1, SpellDestinationChoiceState_1) {
+define("src/client/Notifications", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.onNotification = void 0;
+    function onNotification(notificationName) {
+        return {
+            do: function (callback) {
+                dojo.subscribe(notificationName, null, callback);
+            },
+        };
+    }
+    exports.onNotification = onNotification;
+});
+define("src/client/states/PlayersDraftState", ["require", "exports", "src/client/ActionsAPI", "src/client/states/NoopState"], function (require, exports, ActionsAPI_3, NoopState_3) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.PlayersDraftState = void 0;
+    var PlayersDraftState = (function (_super) {
+        __extends(PlayersDraftState, _super);
+        function PlayersDraftState(elementum, gui) {
+            var _this = _super.call(this) || this;
+            _this.elementum = elementum;
+            _this.gui = gui;
+            return _this;
+        }
+        PlayersDraftState.prototype.onUpdateActionButtons = function () {
+            var _this = this;
+            this.elementum.addCancelButton(_("Cancel"), function () {
+                return ActionsAPI_3.ActionsAPI.cancelDraftChoice().then(function () {
+                    _this.gui.unpickSpellOnHand();
+                    _this.gui.unpickSpellOnSpellPool();
+                });
+            });
+        };
+        return PlayersDraftState;
+    }(NoopState_3.NoopState));
+    exports.PlayersDraftState = PlayersDraftState;
+});
+define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook/common", "src/client/gui/ElementumGameInterface", "src/client/states/NoopState", "src/client/states/PickSpellState", "src/client/states/SpellDestinationChoiceState", "src/client/common/Templates", "src/client/Notifications", "src/client/states/PlayersDraftState", "ebg/counter"], function (require, exports, Gamegui, CommonMixer, ElementumGameInterface_1, NoopState_4, PickSpellState_1, SpellDestinationChoiceState_1, Templates_4, Notifications_1, PlayersDraftState_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Elementum = void 0;
@@ -869,8 +925,8 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
         __extends(Elementum, _super);
         function Elementum() {
             var _this = _super.call(this) || this;
-            _this.state = new NoopState_3.NoopState();
             _this.allSpells = [];
+            _this.states = {};
             Elementum.instance = _this;
             return _this;
         }
@@ -880,9 +936,6 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
         Elementum.prototype.setup = function (gamedatas) {
             var _this = this;
             console.log("Starting game setup");
-            for (var player_id in gamedatas.players) {
-                var player = gamedatas.players[player_id];
-            }
             this.setupNotifications();
             console.log("Full gamedatas", gamedatas);
             this.allSpells = gamedatas.allSpells;
@@ -896,12 +949,32 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
                 core: this,
             });
             this.gui.whenSpellOnHandClicked(function (spell) {
-                _this.state.spellClicked(spell);
+                _this.getCurrentState().spellClicked(spell);
             });
             this.gui.whenSpellPoolClicked(function (spell) {
-                _this.state.spellOnSpellPoolClicked(spell);
+                _this.getCurrentState().spellOnSpellPoolClicked(spell);
             });
-            console.log("Ending game setup");
+            this.createStates();
+        };
+        Elementum.prototype.getCurrentStateName = function () {
+            return (this.gamedatas.gamestate.private_state.name ||
+                this.gamedatas.gamestate.name ||
+                "noop");
+        };
+        Elementum.prototype.getCurrentState = function () {
+            return this.getStateByName(this.getCurrentStateName());
+        };
+        Elementum.prototype.createStates = function () {
+            this.states = {
+                spellChoice: new PickSpellState_1.PickSpellState(this.gui),
+                spellDestinationChoice: new SpellDestinationChoiceState_1.SpellDestinationChoiceState(this, this.gui),
+                playersDraft: new PlayersDraftState_1.PlayersDraftState(this, this.gui),
+                noop: new NoopState_4.NoopState(),
+            };
+        };
+        Elementum.prototype.getStateByName = function (stateName) {
+            var _a;
+            return (_a = this.states[stateName]) !== null && _a !== void 0 ? _a : this.states.noop;
         };
         Elementum.prototype.getSpellByNumber = function (spellNumber) {
             return this.allSpells[spellNumber - 1];
@@ -909,98 +982,49 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
         Elementum.prototype.onEnteringState = function (stateName, args) {
             console.log("Entering state: " + stateName);
             this.setStateBasedOnName(stateName);
-            switch (stateName) {
-                case "spellDestinationChoice":
-                    this.setTextBeforeCancelButton(_(", pick a Spell from the Spell Pool or "));
-                    break;
-            }
         };
         Elementum.prototype.setStateBasedOnName = function (stateName) {
-            switch (stateName) {
-                case "spellChoice":
-                    this.state = new PickSpellState_1.PickSpellState(this.gui);
-                    break;
-                case "spellDestinationChoice":
-                    this.state = new SpellDestinationChoiceState_1.SpellDestinationChoiceState(this.gui);
-                    break;
-                default:
-                    this.state = new NoopState_3.NoopState();
-            }
+            this.getStateByName(stateName).onEnter();
         };
         Elementum.prototype.setTextBeforeCancelButton = function (text) {
-            console.log("Setting text after general actions", text);
-            dojo.place("<span id=\"text-before-cancel-button\">".concat(text, "</span>"), "cancel", "before");
+            dojo.place(Templates_4.Templates.textBeforeCancelButton(text), "cancel", "before");
         };
         Elementum.prototype.onLeavingState = function (stateName) {
             console.log("Leaving state: " + stateName);
-            this.state.onLeave();
-            switch (stateName) {
-                case "spellDestinationChoice":
-                    this.clearTextAfterGeneralActions();
-                    break;
-            }
+            this.getStateByName(stateName).onLeave();
         };
         Elementum.prototype.clearTextAfterGeneralActions = function () {
             dojo.destroy("text-before-cancel-button");
         };
         Elementum.prototype.onUpdateActionButtons = function (stateName, args) {
-            var _this = this;
             console.log("onUpdateActionButtons: " + stateName, args);
-            switch (stateName) {
-                case "spellDestinationChoice":
-                    this.addActionButton("playSpellBtn", _("Play the Spell on your board"), function () { return ActionsAPI_3.ActionsAPI.playSpell(); });
-                    this.addCancelButton(_("Cancel"), function () {
-                        ActionsAPI_3.ActionsAPI.cancelSpellChoice().then(function () {
-                            _this.gui.unpickSpell();
-                        });
-                    });
-                    break;
-                case "playersDraft":
-                    this.addCancelButton(_("Cancel"), function () {
-                        return ActionsAPI_3.ActionsAPI.cancelDraftChoice().then(function () {
-                            _this.gui.unpickSpell();
-                            _this.gui.unpickSpellOnSpellPool();
-                        });
-                    });
-                    break;
-            }
+            this.getStateByName(stateName).onUpdateActionButtons(args);
         };
         Elementum.prototype.addCancelButton = function (text, onClick) {
             this.addActionButton("cancel", text, onClick, undefined, false, "red");
         };
         Elementum.prototype.setupNotifications = function () {
             var _this = this;
-            this.on("spellPlayedOnBoard").do(function (notification) {
+            (0, Notifications_1.onNotification)("spellPlayedOnBoard").do(function (notification) {
                 console.log("Spell played on board notification", notification);
                 var playerId = notification.args.player_id;
                 var spell = notification.args.spell;
                 _this.gui.putSpellOnBoard(playerId, spell);
             });
-            this.on("newHand").do(function (notification) {
+            (0, Notifications_1.onNotification)("newHand").do(function (notification) {
                 _this.gui.replaceHand(notification.args.newHand);
             });
-            this.on("newSpellPoolCard").do(function (notification) {
+            (0, Notifications_1.onNotification)("newSpellPoolCard").do(function (notification) {
                 var newSpellNumber = notification.args
                     .newSpellNumber;
                 _this.gui.putSpellInSpellPool(newSpellNumber);
             });
-            this.on("youPaidCrystalForSpellPool").do(function (notification) {
+            (0, Notifications_1.onNotification)("youPaidCrystalForSpellPool").do(function (notification) {
                 _this.gui.crystals.moveCrystalFromPlayerToPile(_this.getCurrentPlayerId().toString());
             });
-            this.on("otherPlayerPaidCrystalForSpellPool").do(function (notification) {
+            (0, Notifications_1.onNotification)("otherPlayerPaidCrystalForSpellPool").do(function (notification) {
                 _this.gui.crystals.moveCrystalFromPlayerToPile(notification.args.playerId);
             });
-        };
-        Elementum.prototype.on = function (notificationName) {
-            var _this = this;
-            return {
-                do: function (callback) {
-                    dojo.subscribe(notificationName, _this, callback);
-                },
-            };
-        };
-        Elementum.prototype.isCurrentPlayer = function (playerId) {
-            return +playerId === this.player_id;
         };
         Elementum.prototype.performAction = function (action, args) {
             return this.performActionInternal(action, args, false);

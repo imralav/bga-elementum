@@ -11,21 +11,23 @@
 -->
 <div id="cards-spawn-point"></div>
 <div id="layout">
-  <div id="spell-pool-and-current-player-hand">
-    <div id="spell-pool-container" class="frame">
-      <span>Spell pool</span>
-      <div id="spell-pool"></div>
-    </div>
-    <div id="crystals-pile-container" class="frame">
-      <span>Crystals</span>
-      <div id="main-crystals-pile" class="crystals-pile"></div>
-    </div>
+  <div id="main-column">
     <div id="current-player-hand-container" class="frame">
       <span>Your hand</span>
       <div id="current-player-hand"></div>
     </div>
+    <div id="board"></div>
   </div>
-  <div id="board"></div>
+  <div id="side-panel">
+    <div id="crystals-pile-container" class="frame">
+      <span>Crystals</span>
+      <div id="main-crystals-pile" class="crystals-pile"></div>
+    </div>
+    <div id="spell-pool-container" class="frame">
+      <span>Spell pool</span>
+      <div id="spell-pool"></div>
+    </div>
+  </div>
 </div>
 <div id="animation-surface"></div>
 

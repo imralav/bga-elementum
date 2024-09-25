@@ -1,4 +1,4 @@
-import { ActionsAPI } from "../api/ActionsAPI";
+import { ActionsAPI } from "../ActionsAPI";
 import { ElementumGameInterface } from "../gui/ElementumGameInterface";
 import { Spell } from "../spells/Spell";
 import { NoopState } from "./NoopState";
@@ -13,7 +13,7 @@ export class PickSpellState extends NoopState {
     ActionsAPI.pickSpell(spell.number)
       .then(() => {
         console.log("Picking spell", spell.number);
-        this.gui.pickSpell(spell.number);
+        this.gui.pickSpellOnHand(spell.number);
       })
       .catch((error) => {
         console.error("Error picking spell", error);

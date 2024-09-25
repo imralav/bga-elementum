@@ -13,12 +13,14 @@ import Gamegui = require("ebg/core/gamegui");
 import "ebg/counter";
 import CommonMixer = require("cookbook/common");
 import { ElementumGameInterface } from "./gui/ElementumGameInterface";
-import { ActionsAPI } from "./api/ActionsAPI";
 import { Spell } from "./spells/Spell";
 import { State } from "./states/State";
 import { NoopState } from "./states/NoopState";
 import { PickSpellState } from "./states/PickSpellState";
 import { SpellDestinationChoiceState } from "./states/SpellDestinationChoiceState";
+import { Templates } from "./common/Templates";
+import { onNotification } from "./Notifications";
+import { PlayersDraftState } from "./states/PlayersDraftState";
 
 /** The root for all of your game code. */
 export class Elementum extends CommonMixer(Gamegui) {
@@ -26,8 +28,8 @@ export class Elementum extends CommonMixer(Gamegui) {
   // myGlobalArray: string[] = [];
   private gui!: ElementumGameInterface;
   private static instance: Elementum;
-  private state: State = new NoopState();
   private allSpells: Spell[] = [];
+  private states: Record<string, State> = {};
 
   static getInstance() {
     return Elementum.instance;
@@ -42,22 +44,9 @@ export class Elementum extends CommonMixer(Gamegui) {
   /** @gameSpecific See {@link Gamegui.setup} for more information. */
   setup(gamedatas: Gamedatas): void {
     console.log("Starting game setup");
-
-    // Setting up player boards
-    for (var player_id in gamedatas.players) {
-      var player = gamedatas.players[player_id];
-      // TODO: Setting up players boards if needed
-    }
-
-    // TODO: Set up your game interface here, according to "gamedatas"
-
-    // Setup game notifications to handle (see "setupNotifications" method below)
     this.setupNotifications();
-
     console.log("Full gamedatas", gamedatas);
-
     this.allSpells = gamedatas.allSpells;
-
     this.gui = ElementumGameInterface.init({
       spellPool: Object.values(gamedatas.spellPool),
       playerHand: Object.values(gamedatas.currentPlayerHand),
@@ -68,13 +57,37 @@ export class Elementum extends CommonMixer(Gamegui) {
       core: this,
     });
     this.gui.whenSpellOnHandClicked((spell) => {
-      this.state.spellClicked(spell);
+      this.getCurrentState().spellClicked(spell);
     });
     this.gui.whenSpellPoolClicked((spell) => {
-      this.state.spellOnSpellPoolClicked(spell);
+      this.getCurrentState().spellOnSpellPoolClicked(spell);
     });
+    this.createStates();
+  }
 
-    console.log("Ending game setup");
+  private getCurrentStateName() {
+    return (
+      this.gamedatas.gamestate.private_state.name ||
+      this.gamedatas.gamestate.name ||
+      "noop"
+    );
+  }
+
+  private getCurrentState() {
+    return this.getStateByName(this.getCurrentStateName());
+  }
+
+  private createStates() {
+    this.states = {
+      spellChoice: new PickSpellState(this.gui),
+      spellDestinationChoice: new SpellDestinationChoiceState(this, this.gui),
+      playersDraft: new PlayersDraftState(this, this.gui),
+      noop: new NoopState(),
+    };
+  }
+
+  private getStateByName(stateName: GameStateName) {
+    return this.states[stateName] ?? this.states.noop!;
   }
 
   getSpellByNumber(spellNumber: Spell["number"]) {
@@ -88,49 +101,23 @@ export class Elementum extends CommonMixer(Gamegui) {
   onEnteringState(stateName: GameStateName, args: CurrentStateArgs): void {
     console.log("Entering state: " + stateName);
     this.setStateBasedOnName(stateName);
-    switch (stateName) {
-      case "spellDestinationChoice":
-        this.setTextBeforeCancelButton(
-          _(", pick a Spell from the Spell Pool or ")
-        );
-        break;
-    }
   }
 
   private setStateBasedOnName(stateName: GameStateName) {
-    switch (stateName) {
-      case "spellChoice":
-        this.state = new PickSpellState(this.gui);
-        break;
-      case "spellDestinationChoice":
-        this.state = new SpellDestinationChoiceState(this.gui);
-        break;
-      default:
-        this.state = new NoopState();
-    }
+    this.getStateByName(stateName).onEnter();
   }
 
-  private setTextBeforeCancelButton(text: string) {
-    console.log("Setting text after general actions", text);
-    dojo.place(
-      `<span id="text-before-cancel-button">${text}</span>`,
-      "cancel",
-      "before"
-    );
+  setTextBeforeCancelButton(text: string) {
+    dojo.place(Templates.textBeforeCancelButton(text), "cancel", "before");
   }
 
   /** @gameSpecific See {@link Gamegui.onLeavingState} for more information. */
   onLeavingState(stateName: GameStateName): void {
     console.log("Leaving state: " + stateName);
-    this.state.onLeave();
-    switch (stateName) {
-      case "spellDestinationChoice":
-        this.clearTextAfterGeneralActions();
-        break;
-    }
+    this.getStateByName(stateName).onLeave();
   }
 
-  private clearTextAfterGeneralActions() {
+  clearTextAfterGeneralActions() {
     dojo.destroy("text-before-cancel-button");
   }
 
@@ -140,28 +127,7 @@ export class Elementum extends CommonMixer(Gamegui) {
     args: AnyGameStateArgs | null
   ): void {
     console.log("onUpdateActionButtons: " + stateName, args);
-    switch (stateName) {
-      case "spellDestinationChoice":
-        this.addActionButton(
-          "playSpellBtn",
-          _("Play the Spell on your board"),
-          () => ActionsAPI.playSpell()
-        );
-        this.addCancelButton(_("Cancel"), () => {
-          ActionsAPI.cancelSpellChoice().then(() => {
-            this.gui.unpickSpell();
-          });
-        });
-        break;
-      case "playersDraft":
-        this.addCancelButton(_("Cancel"), () =>
-          ActionsAPI.cancelDraftChoice().then(() => {
-            this.gui.unpickSpell();
-            this.gui.unpickSpellOnSpellPool();
-          })
-        );
-        break;
-    }
+    this.getStateByName(stateName).onUpdateActionButtons(args);
   }
 
   ///////////////////////////////////////////////////
@@ -172,7 +138,7 @@ export class Elementum extends CommonMixer(Gamegui) {
 		script.
 	*/
 
-  private addCancelButton(text: string, onClick: () => void) {
+  addCancelButton(text: string, onClick: () => void) {
     this.addActionButton("cancel", text, onClick, undefined, false, "red");
   }
 
@@ -184,16 +150,16 @@ export class Elementum extends CommonMixer(Gamegui) {
 
   /** @gameSpecific See {@link Gamegui.setupNotifications} for more information. */
   setupNotifications() {
-    this.on("spellPlayedOnBoard").do((notification: Notif) => {
+    onNotification("spellPlayedOnBoard").do((notification: Notif) => {
       console.log("Spell played on board notification", notification);
       const playerId = notification.args!.player_id as PlayerId;
       const spell = notification.args!.spell as Spell;
       this.gui.putSpellOnBoard(playerId, spell);
     });
-    this.on("newHand").do((notification: Notif) => {
+    onNotification("newHand").do((notification: Notif) => {
       this.gui.replaceHand(notification.args!.newHand as Spell[]);
     });
-    this.on("newSpellPoolCard").do((notification: Notif) => {
+    onNotification("newSpellPoolCard").do((notification: Notif) => {
       const newSpellNumber = notification.args!
         .newSpellNumber as Spell["number"];
       // const oldSpellNumber = notification.args!
@@ -201,28 +167,18 @@ export class Elementum extends CommonMixer(Gamegui) {
       this.gui.putSpellInSpellPool(newSpellNumber);
       // this.gui.removeSpellInSpellPool(oldSpellNumber);
     });
-    this.on("youPaidCrystalForSpellPool").do((notification: Notif) => {
+    onNotification("youPaidCrystalForSpellPool").do((notification: Notif) => {
       this.gui.crystals.moveCrystalFromPlayerToPile(
         this.getCurrentPlayerId().toString()
       );
     });
-    this.on("otherPlayerPaidCrystalForSpellPool").do((notification: Notif) => {
-      this.gui.crystals.moveCrystalFromPlayerToPile(
-        notification.args!.playerId as PlayerId
-      );
-    });
-  }
-
-  private on(notificationName: string) {
-    return {
-      do: (callback: (notification: Notif) => void) => {
-        dojo.subscribe(notificationName, this, callback);
-      },
-    };
-  }
-
-  private isCurrentPlayer(playerId: PlayerId) {
-    return +playerId === this.player_id;
+    onNotification("otherPlayerPaidCrystalForSpellPool").do(
+      (notification: Notif) => {
+        this.gui.crystals.moveCrystalFromPlayerToPile(
+          notification.args!.playerId as PlayerId
+        );
+      }
+    );
   }
 
   public performAction(action: keyof PlayerActions, args?: any): Promise<void> {

@@ -2,7 +2,6 @@ import { Spell } from "../spells/Spell";
 import { Handle } from "dojo";
 import { Templates } from "../common/Templates";
 import { ElementumGameInterface } from "./ElementumGameInterface";
-import { moveElementOnAnimationSurface } from "./animations";
 
 export type OnSpellClicked = (spell: Spell) => void;
 
@@ -38,14 +37,18 @@ export class Spells {
 
   private makeSpellsClickable() {
     this.forEachSpellInDom((spell) => {
-      dojo.addClass(spell, "clickable");
-      const handler = dojo.connect(spell, "onclick", (evt: Event) => {
-        this.pickSpellFromEvent(evt).then((spell) => {
-          this.spellClickedListeners.forEach((listener) => listener(spell));
-        });
-      });
-      this.spellClickHandlers.push(handler);
+      this.makeSpellNodeClickable(spell);
     });
+  }
+
+  private makeSpellNodeClickable(spell: Node) {
+    dojo.addClass(spell, "clickable");
+    const handler = dojo.connect(spell, "onclick", (evt: Event) => {
+      this.pickSpellFromEvent(evt).then((spell) => {
+        this.spellClickedListeners.forEach((listener) => listener(spell));
+      });
+    });
+    this.spellClickHandlers.push(handler);
   }
 
   private forEachSpellInDom(callback: (spell: Node) => void) {
@@ -54,17 +57,11 @@ export class Spells {
       .forEach((spell) => callback(spell));
   }
 
-  private makeSpellsUnclickable() {
-    this.spellClickHandlers.forEach((handler) => dojo.disconnect(handler));
-    this.spellClickHandlers = [];
-    this.forEachSpellInDom((spell) => {
-      dojo.removeClass(spell, "clickable");
-    });
-  }
-
   private pickSpellFromEvent(evt: Event) {
     this.pickedSpellElement = evt.target as HTMLElement;
-    const spellNumber = this.pickedSpellElement.id.split("_")[1];
+    const spellNumber = this.spellNumberFromElementId(
+      this.pickedSpellElement.id
+    );
     //TODO: how to make sure that evt.target is always the main spell element and not some text child inside?
     if (spellNumber) {
       dojo.stopEvent(evt);
@@ -80,6 +77,10 @@ export class Spells {
     }
   }
 
+  private spellNumberFromElementId(elementId: string) {
+    return +elementId.split("_")[1]!;
+  }
+
   private getSpellByNumber(spellNumber: Spell["number"]) {
     return this.spells.find((spell) => spell.number === spellNumber);
   }
@@ -87,15 +88,15 @@ export class Spells {
   public pickSpell(spellNumber: Spell["number"]) {
     this.pickedSpellElement = $(`spell_${spellNumber}`) as HTMLElement;
     if (this.pickedSpellElement) {
-      dojo.addClass(this.pickedSpellElement, "picked");
-    } else {
-      console.error("Couldn't find spell with number", spellNumber);
+      this.gui.selectSpell(spellNumber);
     }
   }
 
   public unpickSpell() {
     if (this.pickedSpellElement) {
-      dojo.removeClass(this.pickedSpellElement, "picked");
+      this.gui.deselectSpell(
+        this.spellNumberFromElementId(this.pickedSpellElement.id)
+      );
       this.pickedSpellElement = undefined;
     }
   }
@@ -118,15 +119,10 @@ export class Spells {
 
   addSpell(spell: Spell) {
     this.spells.push(spell);
-    if (!this.gui.spellExistsOnBoard(spell)) {
-      this.gui.spawnSpellOnBoard(spell);
+    const spellNode = $(Templates.idOfSpell(spell));
+    if (!spellNode) {
+      return;
     }
-    moveElementOnAnimationSurface(
-      Templates.idOfSpell(spell),
-      this.containerId,
-      2000
-    );
-    this.makeSpellsUnclickable();
-    this.makeSpellsClickable();
+    this.makeSpellNodeClickable(spellNode);
   }
 }

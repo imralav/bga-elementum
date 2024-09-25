@@ -80,7 +80,7 @@ div.element-source.universal {
 }
 
 div.element-source {
-  height: 32px;
+  height: 24px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -90,8 +90,8 @@ div.crystal {
   background-color: rgb(211, 99, 255);
   border: 1px solid rgb(171, 80, 207);
   border-radius: 25%;
-  width: 25px;
-  height: 25px;
+  width: 16px;
+  height: 16px;
 }
 
 .frame {
@@ -104,57 +104,72 @@ div.crystal {
 
 div#layout {
   display: flex;
-  flex-direction: column;
+  gap: 1px;
+  justify-content: space-between;
 }
-div#layout div#spell-pool-and-current-player-hand {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-around;
-  align-items: flex-end;
-  flex-wrap: wrap-reverse;
-}
-div#layout div#spell-pool-and-current-player-hand div#spell-pool-container,
-div#layout div#spell-pool-and-current-player-hand div#current-player-hand-container {
+div#layout div#main-column {
   display: flex;
   flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  flex-grow: 1;
 }
-div#layout div#spell-pool-and-current-player-hand div#spell-pool,
-div#layout div#spell-pool-and-current-player-hand div#current-player-hand {
+div#layout div#main-column div#current-player-hand-container {
+  display: flex;
+  flex-direction: column;
+}
+div#layout div#main-column div#current-player-hand-container div#current-player-hand {
   display: flex;
   justify-content: center;
   padding: 5px;
   gap: 1px;
 }
-div#layout div#board {
+div#layout div#main-column div#board {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   justify-content: space-around;
 }
-div#layout div#board div.player-board {
+div#layout div#main-column div#board div.player-board {
   display: flex;
   flex-direction: column;
   padding: 10px;
   gap: 10px;
   width: auto;
 }
-div#layout div#board div.player-board div.player-board-container {
+div#layout div#main-column div#board div.player-board div.player-board-container {
   display: flex;
   flex-shrink: 0;
   gap: 5px;
 }
-div#layout div#board div.player-board div.player-board-container div.spells-column {
+div#layout div#main-column div#board div.player-board div.player-board-container div.spells-column {
   display: flex;
   flex-direction: column;
 }
-
-div.crystals-pile {
+div#layout div#side-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-end;
+}
+div#layout div#side-panel div#spell-pool-container {
+  display: flex;
+  flex-direction: column;
+}
+div#layout div#side-panel div#spell-pool-container div#spell-pool {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  padding: 5px;
+  gap: 1px;
+}
+div#layout div#side-panel div.crystals-pile {
   width: 90%;
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
 }
-div.crystals-pile#main-crystals-pile {
+div#layout div#side-panel div.crystals-pile#main-crystals-pile {
   width: 100px;
   height: 100px;
 }

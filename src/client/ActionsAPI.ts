@@ -1,5 +1,5 @@
-import { Elementum } from "../elementum";
-import { Spell } from "../spells/Spell";
+import { Elementum } from "./elementum";
+import { Spell } from "./spells/Spell";
 
 export class ActionsAPI {
   public static async pickSpell(spellNumber: Spell["number"]): Promise<void> {

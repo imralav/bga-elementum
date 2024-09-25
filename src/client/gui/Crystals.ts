@@ -10,7 +10,7 @@ interface CrystalsPile {
 
 export class Crystals {
   private static CRYSTALS_PILE_ID = "main-crystals-pile";
-  private static CRYSTAL_SIZE = 25;
+  private static CRYSTAL_SIZE = 16;
   private crystalsPilesPerPlayer: Record<PlayerId, CrystalsPile> = {};
   private crystalsPile!: CrystalsPile;
   private allCrystalsAmount = 0;

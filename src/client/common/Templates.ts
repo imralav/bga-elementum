@@ -23,4 +23,8 @@ export class Templates {
   static idOfSpellColumn(playerId: PlayerId, element: Element) {
     return `spells-column-${playerId}-${element}`;
   }
+
+  static textBeforeCancelButton(text: string) {
+    return `<span id="text-before-cancel-button">${text}</span>`;
+  }
 }
