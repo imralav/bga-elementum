@@ -16,11 +16,27 @@ export class Spells {
   private spellClickedListeners: OnSpellClicked[] = [];
 
   constructor(
-    private containerId: string,
+    public readonly containerId: string,
     private spells: Spell[],
     private gui: ElementumGameInterface
   ) {
     this.addSpellsToDOMAndMakeThenClickable(spells);
+  }
+
+  clearSpells() {
+    this.makeAllSpellsUnClickable();
+    dojo.empty(this.containerId);
+    this.spells = [];
+    this.spellClickHandlers.forEach((handler) => dojo.disconnect(handler));
+    this.spellClickHandlers = [];
+  }
+
+  private makeSpellUnClickable(spell: HTMLElement) {
+    dojo.removeClass(spell, "clickable");
+  }
+
+  private makeAllSpellsUnClickable() {
+    this.forEachSpellInDom((spell) => this.makeSpellUnClickable(spell));
   }
 
   private addSpellsToDOMAndMakeThenClickable(spells: Spell[]) {
@@ -51,10 +67,10 @@ export class Spells {
     this.spellClickHandlers.push(handler);
   }
 
-  private forEachSpellInDom(callback: (spell: Node) => void) {
+  public forEachSpellInDom(callback: (spell: HTMLElement) => void) {
     dojo
       .query(`#${this.containerId} div.spell`)
-      .forEach((spell) => callback(spell));
+      .forEach((spell) => callback(spell as HTMLElement));
   }
 
   private pickSpellFromEvent(evt: Event) {

@@ -91,20 +91,13 @@ export function moveElementOnAnimationSurface(
 ) {
   var elementToMove = $(elementToMoveId) as HTMLElement;
   var newParent = $(newParentId) as HTMLElement;
-  console.log("Cloning mobile object");
   var clone = cloneOnAnimationSurface(elementToMove.id, "_animated");
   if (!clone) {
-    console.error("Clone not found");
     return Promise.reject("Clone not found");
   }
-  console.log("Making it opaque");
-  elementToMove.style.opacity = "0.25";
-  console.log("Adding the original to new parent");
+  elementToMove.style.opacity = "0.1";
   newParent.appendChild(elementToMove);
 
-  console.log(
-    "Cloning mobile object when it's already in new place, to have destination coordinates"
-  );
   var temporaryDestinationElement = cloneOnAnimationSurface(
     elementToMove.id,
     "_animation_destination"
@@ -114,7 +107,6 @@ export function moveElementOnAnimationSurface(
     return Promise.reject("Destination not found");
   }
 
-  console.log("Transitioning the clone to where the second clone is pointing");
   clone.style.position = "absolute";
   clone.style.transitionDuration = durationInMs + "ms";
   //clone.offsetTop;

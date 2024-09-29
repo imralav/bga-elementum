@@ -2,6 +2,7 @@
 
 namespace Elementum\Spells;
 
+use Elementum\Elements;
 use Elementum\SpellEffects\EmpoweredSpellEffect;
 use Elementum\SpellEffects\SpellEffect;
 
@@ -34,5 +35,10 @@ class Spell
     public static function create(int $number, string $name, string $element, SpellEffect $effect, bool $immediate)
     {
         return new Spell($number, $name, $element, $effect, null, $immediate);
+    }
+
+    public function isUniversalElement(): bool
+    {
+        return $this->element === Elements::UNIVERSAL;
     }
 }

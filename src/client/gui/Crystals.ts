@@ -1,7 +1,6 @@
-import CoreCore = require("bga-ts-template/typescript/types/ebg/core/core");
-import Thumb = require("bga-ts-template/typescript/types/ebg/thumb");
 import Zone = require("ebg/zone");
 import { doAfter } from "../common/utils";
+import { Elementum } from "../elementum";
 
 interface CrystalsPile {
   zone: Zone;
@@ -18,7 +17,7 @@ export class Crystals {
   constructor(
     amountOfCrystalsInPile: number,
     private amountOfCrystalsPerPlayer: Record<PlayerId, string>,
-    private core: CoreCore
+    private core: Elementum
   ) {
     this.allCrystalsAmount =
       amountOfCrystalsInPile +
@@ -103,7 +102,7 @@ export class Crystals {
     }
   }
 
-  private moveCrystalFromPileToPlayer(playerId: PlayerId) {
+  moveCrystalFromPileToPlayer(playerId: PlayerId) {
     const id = this.getIdOfFirstCrystalInPile();
     const crystalsPileOfPlayer = this.crystalsPilesPerPlayer[playerId]!;
     this.crystalsPile.zone.removeFromZone(
@@ -140,5 +139,11 @@ export class Crystals {
     const crystal = this.crystalsPilesPerPlayer[playerId]!.element
       .childNodes[0] as HTMLElement;
     return crystal.id;
+  }
+
+  public moveCrystalFromAllPlayersToPile() {
+    for (const playerId of Object.keys(this.crystalsPilesPerPlayer)) {
+      this.moveCrystalFromPlayerToPile(playerId);
+    }
   }
 }

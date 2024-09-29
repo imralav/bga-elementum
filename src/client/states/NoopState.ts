@@ -6,5 +6,6 @@ export class NoopState implements State {
   onUpdateActionButtons(args: AnyGameStateArgs | null): void {}
   spellClicked(spell: Spell): void {}
   spellOnSpellPoolClicked(spell: Spell): void {}
+  elementSourceClicked(playerId: string, element: string): void {}
   onLeave(): void {}
 }

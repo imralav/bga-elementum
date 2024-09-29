@@ -10,6 +10,7 @@ require_once('PlayerMoveChoices/SpellPoolChoiceResolver.php');
 require_once('Notifications.php');
 require_once('Decks.php');
 require_once('Players.php');
+require_once('ImmediateEffectsResolution.php');
 
 use Elementum;
 use Elementum\Decks;
@@ -37,6 +38,14 @@ class ElementumGameLogic
         return Elementum::get()->getGameStateValue('currentRound');
     }
 
+    public function incrementAndGetCurrentRound()
+    {
+        $currentRound = $this->getCurrentRound();
+        $currentRound++;
+        Elementum::get()->setGameStateValue('currentRound', $currentRound);
+        return $currentRound;
+    }
+
     public static function restoreFromDB(): ElementumGameLogic
     {
         $instance = new ElementumGameLogic();
@@ -52,7 +61,17 @@ class ElementumGameLogic
         $instance->createCrystalsPile();
         $instance->setFirstRound();
         $spellsFor2PlayerGame = $instance->exludeSpellsFor2PlayerGame(self::getBasicSpells());
-        $instance->decks->populateSpellsDeckWith($spellsFor2PlayerGame);
+        // $instance->decks->populateSpellsDeckWith($spellsFor2PlayerGame);
+        //TODO: tymczasowo same immediate, póki się nimi zajmuję
+        $extraCounter = 0;
+        $allImmediateSpellsPlusSomeExtra = array_filter($spellsFor2PlayerGame, function ($spell) use (&$extraCounter) {
+            if (!$spell->immediate && $extraCounter < 6) {
+                $extraCounter++;
+                return true;
+            }
+            return $spell->immediate;
+        });
+        $instance->decks->populateSpellsDeckWith($allImmediateSpellsPlusSomeExtra);
         $instance->decks->shuffleSpellsInTheDeck();
         $instance->decks->drawElementSources();
         $instance->decks->drawSpellPool();
@@ -73,7 +92,7 @@ class ElementumGameLogic
 
     private function setFirstRound()
     {
-        Elementum::get()->setGameStateValue('currentRound', 1);
+        Elementum::get()->setGameStateValue('currentRound', 0);
     }
 
 
@@ -135,11 +154,13 @@ class ElementumGameLogic
 
     public function isGameOver()
     {
-        $numberOfPlayers = $this->getNumberOfPlayers();
-        if ($numberOfPlayers === 4) {
-            return $this->getCurrentRound() > ElementumGameLogic::ROUNDS_FOR_4_PLAYERS;
-        }
-        return $this->getCurrentRound() > ElementumGameLogic::ROUNDS_FOR_2_OR_3_PLAYERS;
+        //TODO: na czas testów scoring potrzebuję szybko kończyć grę
+        return $this->getCurrentRound() > 1;
+        // $numberOfPlayers = $this->getNumberOfPlayers();
+        // if ($numberOfPlayers === 4) {
+        //     return $this->getCurrentRound() > ElementumGameLogic::ROUNDS_FOR_4_PLAYERS;
+        // }
+        // return $this->getCurrentRound() > ElementumGameLogic::ROUNDS_FOR_2_OR_3_PLAYERS;
     }
 
     public function prepareCurrentRound()
@@ -201,15 +222,18 @@ class ElementumGameLogic
         return count($draftChoices) === $players;
     }
 
+    /**
+     * @return array<int,int> index of what spell was played by which player
+     */
     public function resolveAndPlaySpellPoolChoices()
     {
         Elementum::get()->debug('Resolving spell pool replacements');
         if (DraftChoices::hasNooneChosenToUseSpellPool()) {
             Elementum::get()->debug('Noone has chosen to use spell pool');
-            return;
+            return [];
         }
         $this->resolveSpellPoolConflicts();
-        $this->playSpellsWithSpellPoolReplacement();
+        return $this->playSpellsWithSpellPoolReplacement();
     }
 
     private function resolveSpellPoolConflicts()
@@ -241,8 +265,12 @@ class ElementumGameLogic
         return $playerBoardSummaries;
     }
 
+    /**
+     * @return array<int,int> index of what spell was played by which player
+     */
     private function playSpellsWithSpellPoolReplacement()
     {
+        $spellsPlayedPerPlayer = [];
         $spellPoolChoices = DraftChoices::getAllSpellPoolChoices();
         foreach ($spellPoolChoices as $choice) {
             $playerId = $choice->getPlayerId();
@@ -251,27 +279,38 @@ class ElementumGameLogic
             $this->decks->replaceCardInSpellPoolAndPlayerBoard($pickedSpell, $spellPoolCardNumber, $playerId);
             $spell = Elementum::get()->getSpellByNumber($spellPoolCardNumber);
             $playerBoard = $this->playerBoards[$playerId];
-            $playerBoard->putSpellOnBoard($spell);
+            $targetElement = $choice->getTargetElementForUniversalSpell() ?? $spell->element;
+            $playerBoard->putSpellOnBoardAtElement($spell, $targetElement);
+            $spellsPlayedPerPlayer[$playerId] = $spell->number;
             Crystals::decrementFor($playerId);
             Notifications::notifyPlayerPaidCrystalForUsingSpellPool($playerId, Players::getAllPlayersBesides($playerId));
-            Notifications::notifyPlayerPlayedSpellOnBoard($spell, $playerId);
+            Notifications::notifyPlayerPlayedSpellOnBoard($spell, $playerId, $targetElement);
             Notifications::notifyPlayerThatGetsToUseSpellPool($playerId);
             Notifications::notifyAboutNewSpellPoolCard($spell, Elementum::get()->getSpellByNumber($pickedSpell));
         }
+        return $spellsPlayedPerPlayer;
     }
 
+
+    /**
+     * @return array<int,int> index of what spell was played by which player
+     */
     public function playPickedSpells()
     {
+        $spellsPlayedPerPlayer = [];
         $playSpellChoices = DraftChoices::getAllThatChoseToPlaySpell();
         foreach ($playSpellChoices as $choice) {
             $playerId = $choice->getPlayerId();
             $spellNumber = PickedSpells::getPickedSpellOf($playerId);
             $spell = Elementum::get()->getSpellByNumber($spellNumber);
+            $targetElement = $choice->getTargetElementForUniversalSpell() ?? $spell->element;
             $this->decks->playCardFromHand($spellNumber, $playerId);
             $playerBoard = $this->playerBoards[$playerId];
-            $playerBoard->putSpellOnBoard($spell);
-            Notifications::notifyPlayerPlayedSpellOnBoard($spell, $playerId);
+            $playerBoard->putSpellOnBoardAtElement($spell, $targetElement);
+            $spellsPlayedPerPlayer[$playerId] = $spell->number;
+            Notifications::notifyPlayerPlayedSpellOnBoard($spell, $playerId, $targetElement);
         }
+        return $spellsPlayedPerPlayer;
     }
 
     public function getAmountOfSpellsLeftInDeck()

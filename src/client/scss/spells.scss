@@ -41,6 +41,14 @@ div.element-source {
   &.universal {
     background-color: rgba(221, 130, 240, 0.589);
   }
+
+  pre {
+    pointer-events: none;
+
+    &.effect {
+      font-size: 8px;
+    }
+  }
 }
 
 div.element-source {

@@ -53,9 +53,30 @@ class Crystals extends  \APP_DbObject
         Crystals::incrementCrystalsOnPile();
     }
 
+    public static function incrementFor($playerId)
+    {
+        $sql = "update crystals set amount = amount + 1 where owner = '$playerId'";
+        Elementum::get()->DbQuery($sql);
+        Crystals::decrementCrystalsOnPile();
+    }
+
+    private static function decrementCrystalsOnPile()
+    {
+        $sql = 'update crystals set amount = amount - 1 where owner = \'pile\'';
+        Elementum::get()->DbQuery($sql);
+    }
+
     private static function incrementCrystalsOnPile()
     {
         $sql = 'update crystals set amount = amount + 1 where owner = \'pile\'';
+        Elementum::get()->DbQuery($sql);
+    }
+
+    public static function decrementMany(array $playerIds)
+    {
+        $sql = 'update crystals set amount = amount - 1 where owner in (\'' . implode('\',\'', $playerIds) . '\')';
+        Elementum::get()->DbQuery($sql);
+        $sql = 'update crystals set amount = amount + ' . count($playerIds) . " where owner = 'pile'";
         Elementum::get()->DbQuery($sql);
     }
 }

@@ -94,7 +94,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${you} must choose what to do with your picked Spell.'),
         "type" => "private",
         "possibleactions" => ["actCancelSpellChoice", "actPlaySpell", "actUseSpellPool"],
-        "transitions" => ['cancelSpellChoice' => 31]
+        "transitions" => ['cancelSpellChoice' => 31, 'chooseUniversalElementDestination' => 33]
     ),
 
     33 => array(

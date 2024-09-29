@@ -1,15 +1,10 @@
 # Main tasks
 
-0. Rework Spells class on frontend, I need to have all the DOM things in one place to make animations possible
-1. Animation of sliding card:
-   - from hand to board
-   - from hand to spell pool
-   - from spell pool to board
-   - from air to board
-   - from air to spell pool
-2. Scoring after all cards are finished.
-3. Implement passive card effects.
-4. Implement immediate card effects.
+0. How does Spell 24 work? It adds virtual element sources, but how does it work exactly?
+1. Implement empowering cards after playing them.
+2. Implement immediate card effects.
+3. Scoring after all cards are finished. Waiting for information from game's author about the details unless I figure it out via youtube videos
+4. Implement passive card effects.
 
 # Refactorings
 
@@ -40,3 +35,11 @@ spl_autoload_register($swdNamespaceAutoload, true, true);
 ```
 
 # Ideas after studying Tisaac's Boilerplate
+
+# Checklist of spell effects
+
+In progress:
+
+- CrushCrystalsSpellEffect: frontend handling of the effect
+
+Done:

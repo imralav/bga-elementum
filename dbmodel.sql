@@ -54,5 +54,6 @@ CREATE TABLE IF NOT EXISTS `draftChoice` (
     `player_id` int(10) unsigned NOT NULL,
     `choice` ENUM('play', 'useSpellPool'),
     `spell_pool_card_number` varchar(16) null,
+    `target_element_for_universal_spell` varchar(16) null,
     PRIMARY KEY (`player_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8 AUTO_INCREMENT = 1;

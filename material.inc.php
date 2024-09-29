@@ -265,7 +265,7 @@ $this->basicSpells = array(
     'Qui Fieri',
     Elements::EARTH,
     new VirtualElementSourcesSpellEffect(2),
-    IMMEDIATE
+    NON_IMMEDIATE
   ),
   Spell::create(
     25,

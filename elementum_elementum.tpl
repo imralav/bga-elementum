@@ -30,13 +30,14 @@
   </div>
 </div>
 <div id="animation-surface"></div>
+<div id="announcement">Test</div>
 
 <script type="text/javascript">
   // Spells, element sources
   var jstpl_spell =
-    '<div class="spell ${element}" id="spell_${spellNumber}"><pre>${spellSummaryData}</pre></div>';
+    '<div class="spell ${element}" id="spell_${spellNumber}"><pre>${spellSummaryData}</pre><pre class="effect">Effect: ${effect}</pre><pre class="effect">Empowered:${empoweredEffect}</div>';
   var jstpl_element_source =
-    '<div class="spell element-source ${element}" id="element_source_${element}">${icon}</div>';
+    '<div class="spell element-source ${element}" id="element-source-${playerId}-${element}">${icon}</div>';
 
   // Crystals, Crystal piles - on board and on player panels
   var jstpl_crystal = '<div class="crystal" id="crystal-${id}"></div>';
@@ -44,7 +45,6 @@
     '<div class="crystals-pile frame" id="crystals-pile-${playerId}"></div>';
 
   // player boards
-  //TODO: BGA silnik używa klas player-board, podmienić na coś customowego
   var jstpl_player_board_container =
     '<div class="player-board frame" id="player-board-${playerId}"><span>${playerName}\'s board</span><div class="player-board-container" id="player-board-container-${playerId}"></div></div>';
   var jstpl_spells_column =

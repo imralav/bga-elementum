@@ -58,8 +58,8 @@ class NoEffect extends SpellEffect
  */
 class EmpoweredSpellEffect
 {
-    private SpellEffect $effect;
-    private bool $additive;
+    public SpellEffect $effect;
+    public bool $additive;
     private function __construct(SpellEffect $effect, bool $additive)
     {
         $this->effect = $effect;

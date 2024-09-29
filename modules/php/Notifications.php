@@ -8,7 +8,7 @@ use Elementum\Player;
 
 class Notifications
 {
-    public static function notifyPlayerPlayedSpellOnBoard(Spell $spell, int $playerId)
+    public static function notifyPlayerPlayedSpellOnBoard(Spell $spell, int $playerId, string $element)
     {
         $playerName = Elementum::get()->loadPlayersBasicInfos()[$playerId]['player_name'];
         Elementum::get()->notifyAllPlayers('spellPlayedOnBoard', clienttranslate('${player_name} played ${spell_name} on their board'), array(
@@ -16,6 +16,7 @@ class Notifications
             'player_id' => $playerId,
             'spell_name' => $spell->name,
             'spell' => $spell,
+            'element' => $element
         ));
     }
 
@@ -53,5 +54,46 @@ class Notifications
     public static function notifyAboutNewSpellPoolCard(Spell $oldSpell, Spell $newSpell)
     {
         Elementum::get()->notifyAllPlayers('newSpellPoolCard', 'A new card has been added to the Spell Pool: ${oldSpellNumber}: ${oldSpellName} has been replaced with ${newSpellNumber}: ${newSpellName}', ['oldSpellNumber' => $oldSpell->number, 'oldSpellName' => $oldSpell->name, 'newSpellNumber' => $newSpell->number, 'newSpellName' => $newSpell->name]);
+    }
+
+    public static function notifyPlayersAboutNewRound(int $round)
+    {
+        Elementum::get()->notifyAllPlayers('newRound', 'A new round has started: ${round}', ['round' => $round]);
+    }
+
+    public static function notifyPlayerReplacingSpellPoolCard(Spell $pickedSpell, Spell $spellFromPool, int $playerId)
+    {
+        Elementum::get()->notifyPlayer(
+            $playerId,
+            'spellPicked',
+            'You decided to replace your ${pickedSpellNumber}:${pickedSpellName} with ${spellPoolSpellNumber}:${spellPoolSpellName} from the Spell Pool',
+            [
+                'pickedSpellNumber' => $pickedSpell->number,
+                'pickedSpellName' => $pickedSpell->name,
+                'spellPoolSpellNumber' => $spellFromPool->number,
+                'spellPoolSpellName' => $spellFromPool->name
+            ]
+        );
+    }
+
+    public static function notifyPlayerPickedAnElement(int $playerId, string $element)
+    {
+        Elementum::get()->notifyPlayer($playerId, 'elementPicked', 'You picked the ${element} element.', ['element' => $element]);
+    }
+
+    /*******************************************************
+     *                                                     *
+     *            immediate spell resolution               *
+     *                                                     *
+     *******************************************************/
+    public static function notifyPlayerTookCrystal(int $playerId)
+    {
+        $name = Elementum::get()->getPlayerNameById($playerId);
+        Elementum::get()->notifyAllPlayers('playerTookCrystal', '${playerName} took a Crystal', ['playerName' => $name, 'playerId' => $playerId]);
+    }
+
+    public static function notifyEveryoneLostCrystal()
+    {
+        Elementum::get()->notifyAllPlayers('everyoneLostCrystal', 'Everyone lost a Crystal', []);
     }
 }

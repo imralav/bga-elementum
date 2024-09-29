@@ -28,6 +28,7 @@ use Elementum\ElementumGameLogic;
 use Elementum\Notifications;
 use Elementum\PlayerMoveChoices\PickedSpells;
 use \Bga\GameFramework\Actions\CheckAction;
+use Elementum\ImmediateEffectsResolution;
 use Elementum\Spells\Spell;
 
 /**
@@ -83,14 +84,15 @@ class Elementum extends Table
     */
     protected function setupNewGame($players, $options = array())
     {
-        // Set the colors of the players with HTML color code
-        // The default below is red/green/blue/orange/brown
-        // The number of colors defined here must correspond to the maximum number of players allowed for the gams
+        $this->initiatePlayers($players);
+        ElementumGameLogic::init2PlayerGame();
+        $this->activeNextPlayer();
+    }
+
+    private function initiatePlayers($players)
+    {
         $gameinfos = $this->getGameinfos();
         $default_colors = $gameinfos['player_colors'];
-
-        // Create players
-        // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
         $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES ";
         $values = array();
         foreach ($players as $player_id => $player) {
@@ -101,20 +103,6 @@ class Elementum extends Table
         $this->DbQuery($sql);
         $this->reattributeColorsBasedOnPreferences($players, $gameinfos['player_colors']);
         $this->reloadPlayersBasicInfos();
-
-        /************ Start the game initialization *****/
-
-        // Init global values with their initial values
-        //$this->setGameStateInitialValue( 'my_first_global_variable', 0 );
-
-        // Init game statistics
-        // (note: statistics used in this file must be defined in your stats.inc.php file)
-        //$this->initStat( 'table', 'table_teststat1', 0 );    // Init a table statistics
-        //$this->initStat( 'player', 'player_teststat1', 0 );  // Init a player statistics (for all players)
-
-        // TODO: setup the initial game situation here
-        ElementumGameLogic::init2PlayerGame();
-        $this->activeNextPlayer();
     }
 
     /*
@@ -133,11 +121,11 @@ class Elementum extends Table
         $sql = "SELECT player_id id, player_score score FROM player ";
         $result['players'] = $this->getCollectionFromDb($sql);
 
-        $result = $this->getAllGameResults($result);
+        $result = $this->getElementumSpecificGameDatas($result);
         return $result;
     }
 
-    private function getAllGameResults($result)
+    private function getElementumSpecificGameDatas($result)
     {
         $elementumGameLogic = ElementumGameLogic::restoreFromDB();
         $result['spellsLeftInDeck'] = $elementumGameLogic->getAmountOfSpellsLeftInDeck();
@@ -155,6 +143,7 @@ class Elementum extends Table
         $result['currentPlayerHand'] = $elementumGameLogic->getHandOf($current_player_id);
         $result['pickedSpell'] = PickedSpells::getPickedSpellOf($current_player_id);
         $result['allSpells'] = $this->allSpells;
+        $result['currentRound'] = $elementumGameLogic->getCurrentRound();
         return $result;
     }
 
@@ -170,8 +159,8 @@ class Elementum extends Table
     */
     function getGameProgression()
     {
-        // TODO: compute and return the game progression
-
+        //TODO: 1. pamiętać z iloma kartami w talii rozpoczęto
+        //TODO: 2. wyliczać ile kart zostało w talii / z iloma rozpoczęto
         return 0;
     }
 
@@ -183,9 +172,14 @@ class Elementum extends Table
     /**
      * @return \Elementum\Spells\Spell 
      */
-    public static function getSpellByNumber($spellNumber)
+    public static function getSpellByNumber($spellNumber): Spell
     {
         return self::get()->allSpells[$spellNumber - 1];
+    }
+
+    public static function isImmediateSpell(int $spellNumber)
+    {
+        return self::get()->allSpells[$spellNumber - 1]->immediate;
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -218,14 +212,17 @@ class Elementum extends Table
 
     function actPlaySpell()
     {
-        //TODO: dodać obsługę Universal Elementu i przejścia do statusu 33
         $currentPlayerId = $this->getCurrentPlayerId();
         $this->debug("Player played a Spell. Player id: $currentPlayerId");
         $pickedSpellNumber = PickedSpells::getPickedSpellOf($currentPlayerId);
         $pickedSpell = self::getSpellByNumber($pickedSpellNumber);
         DraftChoices::playPickedSpell($currentPlayerId);
         $this->notifyPlayer($currentPlayerId, 'spellPicked', 'You decided to play ${spellNumber}: ${spellName}', ['spellNumber' => $pickedSpellNumber, 'spellName' => $pickedSpell->name]);
-        $this->finishDraftForPlayer($currentPlayerId);
+        if ($pickedSpell->isUniversalElement()) {
+            $this->gamestate->nextPrivateState($currentPlayerId, 'chooseUniversalElementDestination');
+        } else {
+            $this->finishDraftForPlayer($currentPlayerId);
+        }
     }
 
     private function finishDraftForPlayer(int $playerId)
@@ -236,7 +233,6 @@ class Elementum extends Table
 
     function actUseSpellPool(int $spellFromPoolNumber)
     {
-        //TODO: dodać obsługę Universal Elementu i przejścia do statusu 33
         $currentPlayerId = $this->getCurrentPlayerId();
         $crystals = Crystals::getCrystalsFor($currentPlayerId);
         if ($crystals < 1) {
@@ -247,18 +243,12 @@ class Elementum extends Table
         $pickedSpellNumber = PickedSpells::getPickedSpellOf($currentPlayerId);
         $pickedSpell = self::getSpellByNumber($pickedSpellNumber);
         DraftChoices::useSpellPool($currentPlayerId, $spellFromPoolNumber);
-        $this->notifyPlayer(
-            $currentPlayerId,
-            'spellPicked',
-            'You decided to replace your ${pickedSpellNumber}:${pickedSpellName} with ${spellPoolSpellNumber}:${spellPoolSpellName} from the Spell Pool',
-            [
-                'pickedSpellNumber' => $pickedSpellNumber,
-                'pickedSpellName' => $pickedSpell->name,
-                'spellPoolSpellNumber' => $spellFromPoolNumber,
-                'spellPoolSpellName' => $spellFromPool->name
-            ]
-        );
-        $this->finishDraftForPlayer($currentPlayerId);
+        Notifications::notifyPlayerReplacingSpellPoolCard($pickedSpell, $spellFromPool, $currentPlayerId);
+        if ($spellFromPool->isUniversalElement()) {
+            $this->gamestate->nextPrivateState($currentPlayerId, 'chooseUniversalElementDestination');
+        } else {
+            $this->finishDraftForPlayer($currentPlayerId);
+        }
     }
 
     function actCancelSpellChoice()
@@ -267,6 +257,25 @@ class Elementum extends Table
         PickedSpells::cancelSpellPick($currentPlayerId);
         $this->debug("Player cancelled their spell choice. player id: $currentPlayerId");
         $this->gamestate->nextPrivateState($currentPlayerId, 'cancelSpellChoice');
+    }
+
+    function actCancelDestinationChoice()
+    {
+        $currentPlayerId = $this->getCurrentPlayerId();
+        $this->debug("Player cancelled their destination choice. player id: $currentPlayerId");
+        $this->gamestate->nextPrivateState($currentPlayerId, 'cancelDestinationChoice');
+    }
+
+    function actPickTargetElement(string $element)
+    {
+        $currentPlayerId = $this->getCurrentPlayerId();
+        // $pickedSpellNumber = PickedSpells::getPickedSpellOf($currentPlayerId);
+        // $pickedSpell = self::getSpellByNumber($pickedSpellNumber);
+        DraftChoices::pickTargetElement($currentPlayerId, $element);
+        $this->debug("Player picked target element. Element: $element, Player id: $currentPlayerId");
+        // $this->notifyPlayer($currentPlayerId, 'spellPlayedOnBoard', 'You played ${spellName} on your board', ['spellName' => $pickedSpell->name]);
+        Notifications::notifyPlayerPickedAnElement($currentPlayerId, $element);
+        $this->finishDraftForPlayer($currentPlayerId);
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -282,13 +291,14 @@ class Elementum extends Table
     function st_prepareCurrentRound()
     {
         $elementumGameLogic = ElementumGameLogic::restoreFromDB();
-        $currentRound = $elementumGameLogic->getCurrentRound();
+        $currentRound = $elementumGameLogic->incrementAndGetCurrentRound();
         $this->trace("=========== Preparing round " . $currentRound);
         if ($elementumGameLogic->isGameOver()) {
             //TODO: go to scoring state, for now let's just end the game
-            $this->gamestate->nextState('gameEnd');
+            $this->gamestate->nextState('scoring');
         } else {
             $elementumGameLogic->prepareCurrentRound();
+            Notifications::notifyPlayersAboutNewRound($currentRound);
             $this->notifyPlayersAboutNewHandOfSpells($elementumGameLogic);
             $this->gamestate->nextState('playersDraft');
         }
@@ -303,10 +313,11 @@ class Elementum extends Table
     function st_placeSpellsOnBoards()
     {
         $logic = ElementumGameLogic::restoreFromDB();
-        $logic->resolveAndPlaySpellPoolChoices();
-        $logic->playPickedSpells();
+        $spellsPlayedPerPlayerFromSpellPool = $logic->resolveAndPlaySpellPoolChoices();
+        $spellsPlayedPerPlayerFromHand = $logic->playPickedSpells();
         $logic->clearPlayerChoices();
-        //3. TODO: rozwiązać natychmiastowe efekty (potrzebny dodatkowy input od gracza?)
+        $allSpellsPlayedThisTurn = $spellsPlayedPerPlayerFromSpellPool + $spellsPlayedPerPlayerFromHand;
+        ImmediateEffectsResolution::rememberImmediateSpellsPlayedThisTurn($allSpellsPlayedThisTurn);
         //4. TODO: przejście do statusu ustawiania power crystals
         //5. przejście do sprawdzenia rundy
         $this->gamestate->nextState('resolveImmediateEffects');
@@ -315,7 +326,15 @@ class Elementum extends Table
     function st_immediateEffectsResolution()
     {
         $this->debug("Resolving immediate effects of spells");
-        $this->gamestate->nextState('placingPowerCrystals');
+        $resolver = ImmediateEffectsResolution::loadResolver();
+        $resolver->resolveEffectsThatDontNeedPlayerInput();
+        if ($resolver->noImmediateEffectsLeftToResolve()) {
+            $this->gamestate->nextState('placingPowerCrystals');
+        } else {
+            //TODO: implement as another set of private states
+            // $resolver->setupGameStatesToCollectNecessaryData();
+            $this->gamestate->nextState('checkRoundEnd');
+        }
     }
 
     function st_placingPowerCrystals()
@@ -385,7 +404,7 @@ class Elementum extends Table
         you must _never_ use getCurrentPlayerId() or getCurrentPlayerName(), otherwise it will fail with a "Not logged" error message. 
     */
 
-    function zombieTurn($state, $active_player)
+    function zombieTurn(array $state, int $active_player)
     {
         $statename = $state['name'];
 

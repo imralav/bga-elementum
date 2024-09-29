@@ -78,6 +78,14 @@ div.spell.universal,
 div.element-source.universal {
   background-color: rgba(221, 130, 240, 0.589);
 }
+div.spell pre,
+div.element-source pre {
+  pointer-events: none;
+}
+div.spell pre.effect,
+div.element-source pre.effect {
+  font-size: 8px;
+}
 
 div.element-source {
   height: 24px;
@@ -121,8 +129,8 @@ div#layout div#main-column div#current-player-hand-container {
 div#layout div#main-column div#current-player-hand-container div#current-player-hand {
   display: flex;
   justify-content: center;
-  padding: 5px;
-  gap: 1px;
+  gap: 3px;
+  min-height: 66.285px;
 }
 div#layout div#main-column div#board {
   display: flex;
@@ -137,6 +145,9 @@ div#layout div#main-column div#board div.player-board {
   gap: 10px;
   width: auto;
 }
+div#layout div#main-column div#board div.player-board.current {
+  order: -1;
+}
 div#layout div#main-column div#board div.player-board div.player-board-container {
   display: flex;
   flex-shrink: 0;
@@ -145,6 +156,7 @@ div#layout div#main-column div#board div.player-board div.player-board-container
 div#layout div#main-column div#board div.player-board div.player-board-container div.spells-column {
   display: flex;
   flex-direction: column;
+  gap: 3px;
 }
 div#layout div#side-panel {
   display: flex;
@@ -192,4 +204,19 @@ div#cards-spawn-point {
   left: 50%;
   top: -200px;
   pointer-events: none;
+}
+
+div#announcement {
+  position: fixed;
+  top: 200px;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.75);
+  font-size: 64px;
+  transition: opacity 0.5s ease-in-out;
+  opacity: 0;
+  z-index: 1;
+  text-align: center;
+}
+div#announcement.visible {
+  opacity: 1;
 }

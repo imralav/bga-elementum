@@ -34,6 +34,7 @@ declare global {
     crystalsInPile: number;
     crystalsPerPlayer: Record<PlayerId, string>;
     playerBoards: Record<PlayerId, PlayerBoardAndElementSources>;
+    currentRound: number;
   }
 
   //
@@ -55,6 +56,7 @@ declare global {
     actPlaySpell: string;
     actUseSpellPool: string;
     actCancelDraftChoice: string;
+    actPickTargetElement: string;
   }
 
   type PlayerId = string;

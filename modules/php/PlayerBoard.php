@@ -58,8 +58,13 @@ class PlayerBoard extends  \APP_DbObject
 
     public function putSpellOnBoard(Spell $spell)
     {
-        $element = $spell->element;
+        $this->putSpellOnBoardAtElement($spell, $spell->element);
+    }
+
+    public function putSpellOnBoardAtElement(Spell $spell, string $element)
+    {
         $this->board[$element][] = $spell;
+        Elementum::get()->dump("====================Adding to player board", $this->board);
         $this->update();
     }
 

@@ -1,4 +1,5 @@
 import { Elementum } from "./elementum";
+import { Element } from "./spells/elementum.types";
 import { Spell } from "./spells/Spell";
 
 export class ActionsAPI {
@@ -41,6 +42,14 @@ export class ActionsAPI {
       .performPossibleAction("actCancelDraftChoice")
       .catch(() => {
         throw new Error("Error cancelling draft choice");
+      });
+  }
+
+  public static async useElementSource(element: Element): Promise<void> {
+    return Elementum.getInstance()
+      .performAction("actPickTargetElement", { element })
+      .catch(() => {
+        throw new Error("Error using element source");
       });
   }
 }

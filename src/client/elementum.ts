@@ -10,7 +10,6 @@
 /// <amd-module name="bgagame/elementum"/>
 
 import Gamegui = require("ebg/core/gamegui");
-import "ebg/counter";
 import CommonMixer = require("cookbook/common");
 import { ElementumGameInterface } from "./gui/ElementumGameInterface";
 import { Spell } from "./spells/Spell";
@@ -21,6 +20,10 @@ import { SpellDestinationChoiceState } from "./states/SpellDestinationChoiceStat
 import { Templates } from "./common/Templates";
 import { onNotification } from "./Notifications";
 import { PlayersDraftState } from "./states/PlayersDraftState";
+import { GameInfoPanel } from "./gui/GameInfoPanel";
+import { Element } from "./spells/elementum.types";
+import { UniversalElementDestinationChoiceState } from "./states/UniversalElementDestinationChoiceState";
+import { announce } from "./gui/Announcement";
 
 /** The root for all of your game code. */
 export class Elementum extends CommonMixer(Gamegui) {
@@ -62,7 +65,13 @@ export class Elementum extends CommonMixer(Gamegui) {
     this.gui.whenSpellPoolClicked((spell) => {
       this.getCurrentState().spellOnSpellPoolClicked(spell);
     });
+    this.gui.whenElementSourceClickedOnCurrentPlayer((playerId, element) => {
+      this.getCurrentState().elementSourceClicked(playerId, element);
+    });
     this.createStates();
+    GameInfoPanel.updateCurrentRound(gamedatas.currentRound);
+    console.log("Announcement!!!!");
+    announce("Current round: " + gamedatas.currentRound + "/3", 2000);
   }
 
   private getCurrentStateName() {
@@ -83,6 +92,8 @@ export class Elementum extends CommonMixer(Gamegui) {
       spellDestinationChoice: new SpellDestinationChoiceState(this, this.gui),
       playersDraft: new PlayersDraftState(this, this.gui),
       noop: new NoopState(),
+      universalElementSpellDestination:
+        new UniversalElementDestinationChoiceState(this.gui),
     };
   }
 
@@ -151,10 +162,10 @@ export class Elementum extends CommonMixer(Gamegui) {
   /** @gameSpecific See {@link Gamegui.setupNotifications} for more information. */
   setupNotifications() {
     onNotification("spellPlayedOnBoard").do((notification: Notif) => {
-      console.log("Spell played on board notification", notification);
       const playerId = notification.args!.player_id as PlayerId;
       const spell = notification.args!.spell as Spell;
-      this.gui.putSpellOnBoard(playerId, spell);
+      const element = notification.args!.element as Element;
+      this.gui.putSpellOnBoard(playerId, spell, element);
     });
     onNotification("newHand").do((notification: Notif) => {
       this.gui.replaceHand(notification.args!.newHand as Spell[]);
@@ -179,6 +190,21 @@ export class Elementum extends CommonMixer(Gamegui) {
         );
       }
     );
+    onNotification("newRound").do((notification: Notif) => {
+      const round = notification.args!.round as number;
+      GameInfoPanel.updateCurrentRound(round);
+      announce("Round " + round + " started", 2000);
+    });
+    onNotification("elementPicked").do(() => {
+      this.gui.makeElementSourcesNotClickableForCurrentPlayer();
+    });
+    onNotification("playerTookCrystal").do((notification: Notif) => {
+      const playerId = notification.args!.playerId as PlayerId;
+      this.gui.crystals.moveCrystalFromPileToPlayer(playerId);
+    });
+    onNotification("everyoneLostCrystal").do(() => {
+      this.gui.crystals.moveCrystalFromAllPlayersToPile();
+    }
   }
 
   public performAction(action: keyof PlayerActions, args?: any): Promise<void> {

@@ -9,12 +9,14 @@ class DraftChoice
     protected $playerId;
     protected $choice;
     protected $spellPoolCardNumber;
+    protected $targetElementForUniversalSpell;
 
-    public function __construct($playerId, $choice, $spellPoolCardNumber = null)
+    public function __construct($playerId, $choice, $spellPoolCardNumber = null, $targetElementForUniversalSpell = null)
     {
         $this->playerId = $playerId;
         $this->choice = $choice;
         $this->spellPoolCardNumber = $spellPoolCardNumber;
+        $this->targetElementForUniversalSpell = $targetElementForUniversalSpell;
     }
 
     public function getPlayerId()
@@ -30,6 +32,11 @@ class DraftChoice
     public function getSpellPoolCardNumber()
     {
         return $this->spellPoolCardNumber;
+    }
+
+    public function getTargetElementForUniversalSpell()
+    {
+        return $this->targetElementForUniversalSpell;
     }
 }
 
@@ -52,13 +59,13 @@ class DraftChoices extends \APP_DbObject
 
     public static function getAllDraftChoices()
     {
-        $results = Elementum::get()->getCollectionFromDB("SELECT player_id, choice, spell_pool_card_number FROM draftChoice");
+        $results = Elementum::get()->getCollectionFromDB("SELECT * FROM draftChoice");
         return self::mapResultsToDraftChoices($results);
     }
 
     private static function getAllByChoice($choice)
     {
-        $results = Elementum::get()->getCollectionFromDB("SELECT player_id, choice, spell_pool_card_number FROM draftChoice WHERE choice = '{$choice}'");
+        $results = Elementum::get()->getCollectionFromDB("SELECT * FROM draftChoice WHERE choice = '{$choice}'");
         return self::mapResultsToDraftChoices($results);
     }
 
@@ -68,7 +75,8 @@ class DraftChoices extends \APP_DbObject
             return new DraftChoice(
                 $result['player_id'],
                 $result['choice'],
-                $result['spell_pool_card_number'] ?? null
+                $result['spell_pool_card_number'] ?? null,
+                $result['target_element_for_universal_spell'] ?? null
             );
         }, $results);
     }
@@ -92,5 +100,16 @@ class DraftChoices extends \APP_DbObject
     {
         $useSpellPoolChoices = DraftChoices::getAllSpellPoolChoices();
         return count($useSpellPoolChoices) === 0;
+    }
+
+    public static function pickTargetElement(int $playerId, string $targetElement)
+    {
+        Elementum::get()->DbQuery("UPDATE draftChoice SET target_element_for_universal_spell = '{$targetElement}' WHERE player_id = '{$playerId}'");
+    }
+
+    public static function getTargetElementForUniversalSpell(int $playerId)
+    {
+        $result = Elementum::get()->getObjectFromDB("SELECT target_element_for_universal_spell FROM draftChoice WHERE player_id = '{$playerId}'");
+        return $result['target_element_for_universal_spell'];
     }
 }

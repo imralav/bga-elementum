@@ -71,8 +71,8 @@ div#layout {
       div#current-player-hand {
         display: flex;
         justify-content: center;
-        padding: 5px;
-        gap: 1px;
+        gap: 3px;
+        min-height: $card-height;
       }
     }
 
@@ -89,6 +89,10 @@ div#layout {
         gap: 10px;
         width: auto;
 
+        &.current {
+          order: -1;
+        }
+
         div.player-board-container {
           display: flex;
           flex-shrink: 0;
@@ -97,6 +101,7 @@ div#layout {
           div.spells-column {
             display: flex;
             flex-direction: column;
+            gap: 3px;
           }
         }
       }
@@ -154,4 +159,19 @@ div#cards-spawn-point {
   left: 50%;
   top: -200px;
   pointer-events: none;
+}
+
+div#announcement {
+  position: fixed;
+  top: 200px;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.75);
+  font-size: 64px;
+  transition: opacity 0.5s ease-in-out;
+  opacity: 0;
+  z-index: 1;
+  text-align: center;
+  &.visible {
+    opacity: 1;
+  }
 }

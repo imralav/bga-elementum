@@ -237,9 +237,19 @@ define("src/client/common/Templates", ["require", "exports", "bgagame/elementum"
         Templates.spell = function (spell) {
             return elementum_1.Elementum.getInstance().format_block("jstpl_spell", {
                 spellNumber: spell.number,
-                spellSummaryData: "".concat(spell.number, ": ").concat(spell.name, "\n(").concat((0, utils_1.getIconForElement)(spell.element), ")"),
+                spellSummaryData: "".concat(spell.number, ": ").concat(spell.name, " (").concat(spell.immediate ? "immediate" : "non_immediate", ")\n(").concat((0, utils_1.getIconForElement)(spell.element), ")"),
+                effect: JSON.stringify(spell.effect, null, 2),
+                empoweredEffect: spell.empoweredEffect
+                    ? JSON.stringify(spell.empoweredEffect, null, 2)
+                    : "none",
                 element: spell.element,
             });
+        };
+        Templates.playerBoard = function (playerId, playerName) {
+            return elementum_1.Elementum.getInstance().format_block("jstpl_player_board_container", { playerId: playerId, playerName: playerName });
+        };
+        Templates.idOfPlayerBoard = function (playerId) {
+            return "player-board-".concat(playerId);
         };
         Templates.idOfSpell = function (spell) {
             return "spell_".concat(spell.number);
@@ -247,12 +257,27 @@ define("src/client/common/Templates", ["require", "exports", "bgagame/elementum"
         Templates.idOfSpellColumn = function (playerId, element) {
             return "spells-column-".concat(playerId, "-").concat(element);
         };
+        Templates.idOfElementSource = function (playerId, element) {
+            return "element-source-".concat(playerId, "-").concat(element);
+        };
         Templates.textBeforeCancelButton = function (text) {
             return "<span id=\"text-before-cancel-button\">".concat(text, "</span>");
+        };
+        Templates.gameInfoPanel = function () {
+            return "<div id=\"game-info-panel\" class=\"player-board\">\n              <span>Current round: <span id=\"current-round\">0</span>/<span id=\"total-rounds\">3</span></span>\n            </div>";
         };
         return Templates;
     }());
     exports.Templates = Templates;
+});
+define("src/client/common/variation", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.randomVariation = void 0;
+    function randomVariation(from, variation) {
+        return from + Math.random() * (2 * variation) - variation;
+    }
+    exports.randomVariation = randomVariation;
 });
 define("src/client/gui/Crystals", ["require", "exports", "ebg/zone", "src/client/common/utils"], function (require, exports, Zone, utils_2) {
     "use strict";
@@ -359,13 +384,39 @@ define("src/client/gui/Crystals", ["require", "exports", "ebg/zone", "src/client
                 .childNodes[0];
             return crystal.id;
         };
+        Crystals.prototype.moveCrystalFromAllPlayersToPile = function () {
+            for (var _i = 0, _a = Object.keys(this.crystalsPilesPerPlayer); _i < _a.length; _i++) {
+                var playerId = _a[_i];
+                this.moveCrystalFromPlayerToPile(playerId);
+            }
+        };
         Crystals.CRYSTALS_PILE_ID = "main-crystals-pile";
         Crystals.CRYSTAL_SIZE = 16;
         return Crystals;
     }());
     exports.Crystals = Crystals;
 });
-define("src/client/gui/PlayerBoard", ["require", "exports", "src/client/common/utils", "src/client/common/Templates"], function (require, exports, utils_3, Templates_1) {
+define("src/client/gui/GameInfoPanel", ["require", "exports", "src/client/common/Templates", "ebg/counter"], function (require, exports, Templates_1) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.GameInfoPanel = void 0;
+    var GameInfoPanel = (function () {
+        function GameInfoPanel() {
+        }
+        GameInfoPanel.init = function () {
+            dojo.place(Templates_1.Templates.gameInfoPanel(), "player_boards", "first");
+            this.currentRoundCounter.create("current-round");
+        };
+        GameInfoPanel.updateCurrentRound = function (round) {
+            this.currentRoundCounter.toValue(round);
+        };
+        GameInfoPanel.GAME_INFO_PANEL_ID = "game-info-panel";
+        GameInfoPanel.currentRoundCounter = new ebg.counter();
+        return GameInfoPanel;
+    }());
+    exports.GameInfoPanel = GameInfoPanel;
+});
+define("src/client/gui/PlayerBoard", ["require", "exports", "src/client/common/utils", "src/client/common/Templates"], function (require, exports, utils_3, Templates_2) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.PlayerBoard = void 0;
@@ -374,6 +425,8 @@ define("src/client/gui/PlayerBoard", ["require", "exports", "src/client/common/u
             this.playerId = playerId;
             this.playerBoard = playerBoard;
             this.core = core;
+            this.elementSourceClickHandlers = [];
+            this.elementSourceClickListeners = [];
             this.createPlayerBoard();
         }
         PlayerBoard.prototype.createPlayerBoard = function () {
@@ -382,7 +435,7 @@ define("src/client/gui/PlayerBoard", ["require", "exports", "src/client/common/u
         };
         PlayerBoard.prototype.createPlayerBoardContainer = function () {
             var playerName = this.core.gamedatas.players[+this.playerId].name;
-            var playerBoardContainer = this.core.format_block("jstpl_player_board_container", { playerId: this.playerId, playerName: playerName });
+            var playerBoardContainer = Templates_2.Templates.playerBoard(this.playerId, playerName);
             dojo.place(playerBoardContainer, "board");
         };
         PlayerBoard.prototype.createPlayerBoardColumns = function () {
@@ -390,7 +443,7 @@ define("src/client/gui/PlayerBoard", ["require", "exports", "src/client/common/u
                 var element = _a[_i];
                 this.createPlayerBoardColumn(element);
                 this.putElementSourceAsFirstElementInColumn(element);
-                this.putSpellsInColumn(this.playerBoard.board[element]);
+                this.putSpellsInColumn(this.playerBoard.board[element], element);
             }
         };
         PlayerBoard.prototype.createPlayerBoardColumn = function (element) {
@@ -403,28 +456,76 @@ define("src/client/gui/PlayerBoard", ["require", "exports", "src/client/common/u
         PlayerBoard.prototype.putElementSourceAsFirstElementInColumn = function (element) {
             var elementSource = this.core.format_block("jstpl_element_source", {
                 element: element,
+                playerId: this.playerId,
                 icon: (0, utils_3.getIconForElement)(element),
             });
             dojo.place(elementSource, this.getIdOfElementColumnForCurrentPlayer(element));
         };
+        PlayerBoard.prototype.makeElementSourcesClickable = function () {
+            for (var _i = 0, _a = this.playerBoard.elementSources; _i < _a.length; _i++) {
+                var element = _a[_i];
+                var elementSourceNode = document.getElementById(Templates_2.Templates.idOfElementSource(this.playerId, element));
+                this.makeElementSourceClickable(elementSourceNode);
+            }
+        };
+        PlayerBoard.prototype.makeElementSourcesNotClickable = function () {
+            this.disconnectAndClearClickHandlers();
+            for (var _i = 0, _a = this.playerBoard.elementSources; _i < _a.length; _i++) {
+                var element = _a[_i];
+                var elementSourceNode = document.getElementById(Templates_2.Templates.idOfElementSource(this.playerId, element));
+                dojo.removeClass(elementSourceNode, "clickable");
+            }
+        };
+        PlayerBoard.prototype.disconnectAndClearClickHandlers = function () {
+            this.elementSourceClickHandlers.forEach(function (handler) {
+                dojo.disconnect(handler);
+            });
+            this.elementSourceClickHandlers = [];
+        };
+        PlayerBoard.prototype.makeElementSourceClickable = function (elementSourceNode) {
+            dojo.addClass(elementSourceNode, "clickable");
+            this.registerClickHandlerOn(elementSourceNode);
+        };
+        PlayerBoard.prototype.registerClickHandlerOn = function (elementSourceNode) {
+            var _this = this;
+            var handler = dojo.connect(elementSourceNode, "onclick", function (evt) {
+                _this.elementSourceClickListeners.forEach(function (listener) {
+                    var element = _this.pickElementSourceFromEvent(evt);
+                    listener(_this.playerId, element);
+                });
+            });
+            this.elementSourceClickHandlers.push(handler);
+        };
+        PlayerBoard.prototype.pickElementSourceFromEvent = function (evt) {
+            var htmlElement = evt.target;
+            var id = htmlElement.id;
+            var element = id.split("-")[3];
+            return element;
+        };
         PlayerBoard.prototype.getIdOfElementColumnForCurrentPlayer = function (element) {
             return "spells-column-".concat(this.playerId, "-").concat(element);
         };
-        PlayerBoard.prototype.putSpellsInColumn = function (spells) {
+        PlayerBoard.prototype.putSpellsInColumn = function (spells, element) {
             for (var _i = 0, spells_1 = spells; _i < spells_1.length; _i++) {
                 var spell = spells_1[_i];
-                this.putSpellOnBoard(spell);
+                this.putSpellOnBoard(spell, element);
             }
         };
-        PlayerBoard.prototype.putSpellOnBoard = function (spell) {
-            var spellTemplate = Templates_1.Templates.spell(spell);
-            dojo.place(spellTemplate, this.getIdOfElementColumnForCurrentPlayer(spell.element));
+        PlayerBoard.prototype.putSpellOnBoard = function (spell, element) {
+            var spellTemplate = Templates_2.Templates.spell(spell);
+            dojo.place(spellTemplate, this.getIdOfElementColumnForCurrentPlayer(element));
+        };
+        PlayerBoard.prototype.whenElementSourceClicked = function (listener) {
+            this.elementSourceClickListeners.push(listener);
+        };
+        PlayerBoard.prototype.markAsCurrentPlayer = function () {
+            dojo.addClass(Templates_2.Templates.idOfPlayerBoard(this.playerId), "current");
         };
         return PlayerBoard;
     }());
     exports.PlayerBoard = PlayerBoard;
 });
-define("src/client/gui/Spells", ["require", "exports", "src/client/common/Templates"], function (require, exports, Templates_2) {
+define("src/client/gui/Spells", ["require", "exports", "src/client/common/Templates"], function (require, exports, Templates_3) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Spells = void 0;
@@ -437,10 +538,24 @@ define("src/client/gui/Spells", ["require", "exports", "src/client/common/Templa
             this.spellClickedListeners = [];
             this.addSpellsToDOMAndMakeThenClickable(spells);
         }
+        Spells.prototype.clearSpells = function () {
+            this.makeAllSpellsUnClickable();
+            dojo.empty(this.containerId);
+            this.spells = [];
+            this.spellClickHandlers.forEach(function (handler) { return dojo.disconnect(handler); });
+            this.spellClickHandlers = [];
+        };
+        Spells.prototype.makeSpellUnClickable = function (spell) {
+            dojo.removeClass(spell, "clickable");
+        };
+        Spells.prototype.makeAllSpellsUnClickable = function () {
+            var _this = this;
+            this.forEachSpellInDom(function (spell) { return _this.makeSpellUnClickable(spell); });
+        };
         Spells.prototype.addSpellsToDOMAndMakeThenClickable = function (spells) {
             for (var _i = 0, spells_2 = spells; _i < spells_2.length; _i++) {
                 var spell = spells_2[_i];
-                var spellBlock = Templates_2.Templates.spell(spell);
+                var spellBlock = Templates_3.Templates.spell(spell);
                 dojo.place(spellBlock, this.containerId);
             }
             this.makeSpellsClickable();
@@ -522,7 +637,7 @@ define("src/client/gui/Spells", ["require", "exports", "src/client/common/Templa
         };
         Spells.prototype.addSpell = function (spell) {
             this.spells.push(spell);
-            var spellNode = $(Templates_2.Templates.idOfSpell(spell));
+            var spellNode = $(Templates_3.Templates.idOfSpell(spell));
             if (!spellNode) {
                 return;
             }
@@ -585,23 +700,17 @@ define("src/client/gui/animations", ["require", "exports"], function (require, e
         if (durationInMs === void 0) { durationInMs = 1000; }
         var elementToMove = $(elementToMoveId);
         var newParent = $(newParentId);
-        console.log("Cloning mobile object");
         var clone = cloneOnAnimationSurface(elementToMove.id, "_animated");
         if (!clone) {
-            console.error("Clone not found");
             return Promise.reject("Clone not found");
         }
-        console.log("Making it opaque");
-        elementToMove.style.opacity = "0.25";
-        console.log("Adding the original to new parent");
+        elementToMove.style.opacity = "0.1";
         newParent.appendChild(elementToMove);
-        console.log("Cloning mobile object when it's already in new place, to have destination coordinates");
         var temporaryDestinationElement = cloneOnAnimationSurface(elementToMove.id, "_animation_destination");
         if (!temporaryDestinationElement) {
             console.error("Destination not found");
             return Promise.reject("Destination not found");
         }
-        console.log("Transitioning the clone to where the second clone is pointing");
         clone.style.position = "absolute";
         clone.style.transitionDuration = durationInMs + "ms";
         clone.style.left = temporaryDestinationElement.style.left;
@@ -619,7 +728,7 @@ define("src/client/gui/animations", ["require", "exports"], function (require, e
     }
     exports.moveElementOnAnimationSurface = moveElementOnAnimationSurface;
 });
-define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/client/common/Templates", "src/client/gui/Crystals", "src/client/gui/PlayerBoard", "src/client/gui/Spells", "src/client/gui/animations"], function (require, exports, Templates_3, Crystals_1, PlayerBoard_1, Spells_1, animations_1) {
+define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/client/common/Templates", "src/client/common/variation", "src/client/gui/Crystals", "src/client/gui/GameInfoPanel", "src/client/gui/PlayerBoard", "src/client/gui/Spells", "src/client/gui/animations"], function (require, exports, Templates_4, variation_1, Crystals_1, GameInfoPanel_1, PlayerBoard_1, Spells_1, animations_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ElementumGameInterface = void 0;
@@ -627,11 +736,14 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
         function ElementumGameInterface(spellPool, playerHand, crystals, core, playerBoards) {
             this.crystals = crystals;
             this.core = core;
-            this.animationDurationInMs = 2000;
+            this.animationDurationInMs = 1000;
+            this.playerBoards = {};
             this.buildSpellPool(spellPool);
             this.buildPlayerHand(playerHand);
             this.crystals.putCrystalsOnBoardAndInPlayerPanels();
             this.buildPlayerBoards(playerBoards);
+            this.makeCurrentPlayerBoardFirst();
+            GameInfoPanel_1.GameInfoPanel.init();
         }
         ElementumGameInterface.init = function (input) {
             var gui = new ElementumGameInterface(input.spellPool, input.playerHand, new Crystals_1.Crystals(input.crystalsInPile, input.crystalsPerPlayer, input.core), input.core, input.playerBoards);
@@ -646,6 +758,9 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
         ElementumGameInterface.prototype.whenSpellPoolClicked = function (onSpellClicked) {
             this.spellPool.whenSpellClicked(onSpellClicked);
         };
+        ElementumGameInterface.prototype.whenElementSourceClickedOnCurrentPlayer = function (onElementClicked) {
+            this.playerBoards[this.core.getCurrentPlayerId()].whenElementSourceClicked(onElementClicked);
+        };
         ElementumGameInterface.prototype.buildSpellPool = function (spellPool) {
             this.spellPool = new Spells_1.Spells("spell-pool", spellPool, this);
         };
@@ -654,29 +769,62 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
         };
         ElementumGameInterface.prototype.buildPlayerBoards = function (playerBoards) {
             var _this = this;
-            Object.entries(playerBoards).map(function (_a) {
+            this.playerBoards = Object.entries(playerBoards).reduce(function (acc, _a) {
                 var playerId = _a[0], playerBoard = _a[1];
-                new PlayerBoard_1.PlayerBoard(playerId, playerBoard, _this.core);
-            });
+                acc[playerId] = new PlayerBoard_1.PlayerBoard(playerId, playerBoard, _this.core);
+                return acc;
+            }, {});
         };
-        ElementumGameInterface.prototype.putSpellOnBoard = function (playerId, spell) {
+        ElementumGameInterface.prototype.makeCurrentPlayerBoardFirst = function () {
+            var currentPlayerId = this.core.getCurrentPlayerId();
+            var currentPlayerBoard = this.playerBoards[currentPlayerId];
+            if (currentPlayerBoard) {
+                currentPlayerBoard.markAsCurrentPlayer();
+            }
+        };
+        ElementumGameInterface.prototype.putSpellOnBoard = function (playerId, spell, column) {
             if (!this.spellExistsOnBoard(spell)) {
                 this.spawnSpellOnBoard(spell);
             }
-            var columnId = Templates_3.Templates.idOfSpellColumn(playerId, spell.element);
-            var spellId = Templates_3.Templates.idOfSpell(spell);
+            var columnId = Templates_4.Templates.idOfSpellColumn(playerId, column !== null && column !== void 0 ? column : spell.element);
+            var spellId = Templates_4.Templates.idOfSpell(spell);
             this.deselectSpell(spell.number);
             (0, animations_1.moveElementOnAnimationSurface)(spellId, columnId, this.animationDurationInMs);
         };
         ElementumGameInterface.prototype.spellExistsOnBoard = function (spell) {
-            return !!$(Templates_3.Templates.idOfSpell(spell));
+            return !!$(Templates_4.Templates.idOfSpell(spell));
         };
         ElementumGameInterface.prototype.spawnSpellOnBoard = function (spell) {
-            var spellTemplate = Templates_3.Templates.spell(spell);
+            var spellTemplate = Templates_4.Templates.spell(spell);
             return dojo.place(spellTemplate, "cards-spawn-point");
         };
         ElementumGameInterface.prototype.replaceHand = function (hand) {
-            this.playerHand.replaceSpells(hand);
+            var _this = this;
+            this.moveEachSpellToSpawnPointAndDestroy().then(function () {
+                _this.playerHand.clearSpells();
+                _this.spawnSpellsAndAddToHand(hand);
+            });
+        };
+        ElementumGameInterface.prototype.moveEachSpellToSpawnPointAndDestroy = function () {
+            var _this = this;
+            var promises = [];
+            this.playerHand.forEachSpellInDom(function (spell) {
+                promises.push((0, animations_1.moveElementOnAnimationSurface)(spell.id, "cards-spawn-point", (0, variation_1.randomVariation)(_this.animationDurationInMs, 500)).then(function () {
+                    dojo.destroy(spell);
+                }));
+            });
+            return Promise.all(promises);
+        };
+        ElementumGameInterface.prototype.spawnSpellsAndAddToHand = function (hand) {
+            var _this = this;
+            hand.forEach(function (spell) {
+                if (!_this.spellExistsOnBoard(spell)) {
+                    _this.spawnSpellOnBoard(spell);
+                }
+                (0, animations_1.moveElementOnAnimationSurface)(Templates_4.Templates.idOfSpell(spell), _this.playerHand.containerId, (0, variation_1.randomVariation)(_this.animationDurationInMs, 500)).then(function () {
+                    _this.playerHand.addSpell(spell);
+                });
+            });
         };
         ElementumGameInterface.prototype.pickSpellOnHand = function (spellNumber) {
             this.playerHand.pickSpell(spellNumber);
@@ -696,7 +844,7 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
                 this.spawnSpellOnBoard(spell);
             }
             var containerId = "spell-pool";
-            var spellId = Templates_3.Templates.idOfSpell(spell);
+            var spellId = Templates_4.Templates.idOfSpell(spell);
             this.deselectSpell(spell.number);
             (0, animations_1.moveElementOnAnimationSurface)(spellId, containerId, this.animationDurationInMs);
             this.spellPool.addSpell(spell);
@@ -719,6 +867,12 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
                 dojo.removeClass(pickedSpellElement, "picked");
             }
         };
+        ElementumGameInterface.prototype.makeElementSourcesClickableForCurrentPlayer = function () {
+            this.playerBoards[this.core.getCurrentPlayerId()].makeElementSourcesClickable();
+        };
+        ElementumGameInterface.prototype.makeElementSourcesNotClickableForCurrentPlayer = function () {
+            this.playerBoards[this.core.getCurrentPlayerId()].makeElementSourcesNotClickable();
+        };
         return ElementumGameInterface;
     }());
     exports.ElementumGameInterface = ElementumGameInterface;
@@ -738,6 +892,7 @@ define("src/client/states/NoopState", ["require", "exports"], function (require,
         NoopState.prototype.onUpdateActionButtons = function (args) { };
         NoopState.prototype.spellClicked = function (spell) { };
         NoopState.prototype.spellOnSpellPoolClicked = function (spell) { };
+        NoopState.prototype.elementSourceClicked = function (playerId, element) { };
         NoopState.prototype.onLeave = function () { };
         return NoopState;
     }());
@@ -801,6 +956,17 @@ define("src/client/ActionsAPI", ["require", "exports", "bgagame/elementum"], fun
                             .performPossibleAction("actCancelDraftChoice")
                             .catch(function () {
                             throw new Error("Error cancelling draft choice");
+                        })];
+                });
+            });
+        };
+        ActionsAPI.useElementSource = function (element) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2, elementum_2.Elementum.getInstance()
+                            .performAction("actPickTargetElement", { element: element })
+                            .catch(function () {
+                            throw new Error("Error using element source");
                         })];
                 });
             });
@@ -917,7 +1083,61 @@ define("src/client/states/PlayersDraftState", ["require", "exports", "src/client
     }(NoopState_3.NoopState));
     exports.PlayersDraftState = PlayersDraftState;
 });
-define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook/common", "src/client/gui/ElementumGameInterface", "src/client/states/NoopState", "src/client/states/PickSpellState", "src/client/states/SpellDestinationChoiceState", "src/client/common/Templates", "src/client/Notifications", "src/client/states/PlayersDraftState", "ebg/counter"], function (require, exports, Gamegui, CommonMixer, ElementumGameInterface_1, NoopState_4, PickSpellState_1, SpellDestinationChoiceState_1, Templates_4, Notifications_1, PlayersDraftState_1) {
+define("src/client/states/UniversalElementDestinationChoiceState", ["require", "exports", "src/client/ActionsAPI", "src/client/states/NoopState"], function (require, exports, ActionsAPI_4, NoopState_4) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.UniversalElementDestinationChoiceState = void 0;
+    var UniversalElementDestinationChoiceState = (function (_super) {
+        __extends(UniversalElementDestinationChoiceState, _super);
+        function UniversalElementDestinationChoiceState(gui) {
+            var _this = _super.call(this) || this;
+            _this.gui = gui;
+            return _this;
+        }
+        UniversalElementDestinationChoiceState.prototype.onEnter = function () {
+            this.gui.makeElementSourcesClickableForCurrentPlayer();
+        };
+        UniversalElementDestinationChoiceState.prototype.onLeave = function () {
+            this.gui.makeElementSourcesNotClickableForCurrentPlayer();
+        };
+        UniversalElementDestinationChoiceState.prototype.elementSourceClicked = function (playerId, element) {
+            console.log("Element source clicked", element);
+            ActionsAPI_4.ActionsAPI.useElementSource(element)
+                .then(function () {
+                console.log("Picking element source", element);
+            })
+                .catch(function (error) {
+                console.error("Error picking element source", error);
+            });
+        };
+        return UniversalElementDestinationChoiceState;
+    }(NoopState_4.NoopState));
+    exports.UniversalElementDestinationChoiceState = UniversalElementDestinationChoiceState;
+});
+define("src/client/gui/Announcement", ["require", "exports"], function (require, exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.announce = void 0;
+    function announce(message, durationInMs) {
+        if (durationInMs === void 0) { durationInMs = 1000; }
+        var announcementElement = document.getElementById("announcement");
+        if (!announcementElement) {
+            console.error("Could not find announcement element");
+            return Promise.reject();
+        }
+        announcementElement.innerText = message;
+        announcementElement.classList.add("visible");
+        var promise = new Promise(function (resolve) {
+            setTimeout(function () {
+                announcementElement.classList.remove("visible");
+                resolve();
+            }, durationInMs);
+        });
+        return promise;
+    }
+    exports.announce = announce;
+});
+define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook/common", "src/client/gui/ElementumGameInterface", "src/client/states/NoopState", "src/client/states/PickSpellState", "src/client/states/SpellDestinationChoiceState", "src/client/common/Templates", "src/client/Notifications", "src/client/states/PlayersDraftState", "src/client/gui/GameInfoPanel", "src/client/states/UniversalElementDestinationChoiceState", "src/client/gui/Announcement"], function (require, exports, Gamegui, CommonMixer, ElementumGameInterface_1, NoopState_5, PickSpellState_1, SpellDestinationChoiceState_1, Templates_5, Notifications_1, PlayersDraftState_1, GameInfoPanel_2, UniversalElementDestinationChoiceState_1, Announcement_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Elementum = void 0;
@@ -954,7 +1174,13 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
             this.gui.whenSpellPoolClicked(function (spell) {
                 _this.getCurrentState().spellOnSpellPoolClicked(spell);
             });
+            this.gui.whenElementSourceClickedOnCurrentPlayer(function (playerId, element) {
+                _this.getCurrentState().elementSourceClicked(playerId, element);
+            });
             this.createStates();
+            GameInfoPanel_2.GameInfoPanel.updateCurrentRound(gamedatas.currentRound);
+            console.log("Announcement!!!!");
+            (0, Announcement_1.announce)("Current round: " + gamedatas.currentRound + "/3", 2000);
         };
         Elementum.prototype.getCurrentStateName = function () {
             return (this.gamedatas.gamestate.private_state.name ||
@@ -969,7 +1195,8 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
                 spellChoice: new PickSpellState_1.PickSpellState(this.gui),
                 spellDestinationChoice: new SpellDestinationChoiceState_1.SpellDestinationChoiceState(this, this.gui),
                 playersDraft: new PlayersDraftState_1.PlayersDraftState(this, this.gui),
-                noop: new NoopState_4.NoopState(),
+                noop: new NoopState_5.NoopState(),
+                universalElementSpellDestination: new UniversalElementDestinationChoiceState_1.UniversalElementDestinationChoiceState(this.gui),
             };
         };
         Elementum.prototype.getStateByName = function (stateName) {
@@ -987,7 +1214,7 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
             this.getStateByName(stateName).onEnter();
         };
         Elementum.prototype.setTextBeforeCancelButton = function (text) {
-            dojo.place(Templates_4.Templates.textBeforeCancelButton(text), "cancel", "before");
+            dojo.place(Templates_5.Templates.textBeforeCancelButton(text), "cancel", "before");
         };
         Elementum.prototype.onLeavingState = function (stateName) {
             console.log("Leaving state: " + stateName);
@@ -1006,10 +1233,10 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
         Elementum.prototype.setupNotifications = function () {
             var _this = this;
             (0, Notifications_1.onNotification)("spellPlayedOnBoard").do(function (notification) {
-                console.log("Spell played on board notification", notification);
                 var playerId = notification.args.player_id;
                 var spell = notification.args.spell;
-                _this.gui.putSpellOnBoard(playerId, spell);
+                var element = notification.args.element;
+                _this.gui.putSpellOnBoard(playerId, spell, element);
             });
             (0, Notifications_1.onNotification)("newHand").do(function (notification) {
                 _this.gui.replaceHand(notification.args.newHand);
@@ -1024,6 +1251,21 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
             });
             (0, Notifications_1.onNotification)("otherPlayerPaidCrystalForSpellPool").do(function (notification) {
                 _this.gui.crystals.moveCrystalFromPlayerToPile(notification.args.playerId);
+            });
+            (0, Notifications_1.onNotification)("newRound").do(function (notification) {
+                var round = notification.args.round;
+                GameInfoPanel_2.GameInfoPanel.updateCurrentRound(round);
+                (0, Announcement_1.announce)("Round " + round + " started", 2000);
+            });
+            (0, Notifications_1.onNotification)("elementPicked").do(function () {
+                _this.gui.makeElementSourcesNotClickableForCurrentPlayer();
+            });
+            (0, Notifications_1.onNotification)("playerTookCrystal").do(function (notification) {
+                var playerId = notification.args.playerId;
+                _this.gui.crystals.moveCrystalFromPileToPlayer(playerId);
+            });
+            (0, Notifications_1.onNotification)("everyoneLostCrystal").do(function () {
+                _this.gui.crystals.moveCrystalFromAllPlayersToPile();
             });
         };
         Elementum.prototype.performAction = function (action, args) {
