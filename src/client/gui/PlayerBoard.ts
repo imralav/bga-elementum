@@ -4,20 +4,29 @@ import Gamegui = require("bga-ts-template/typescript/types/ebg/core/gamegui");
 import { Spell } from "../spells/Spell";
 import { Templates } from "../common/Templates";
 import { Handle } from "dojo";
+import { Elementum } from "../elementum";
 
 export type OnElementSourceClicked = (
   playerId: PlayerId,
   element: Element
 ) => void;
 
+export type OnSpellOnBoardClicked = (
+  playerId: PlayerId,
+  spell: Spell,
+  element: Element
+) => void;
+
 export class PlayerBoard {
   private elementSourceClickHandlers: Handle[] = [];
   private elementSourceClickListeners: OnElementSourceClicked[] = [];
+  private spellClickHandlers: Handle[] = [];
+  private spellClickListeners: OnSpellOnBoardClicked[] = [];
 
   constructor(
     private playerId: PlayerId,
     private playerBoard: PlayerBoardAndElementSources,
-    private core: Gamegui
+    private core: Elementum
   ) {
     this.createPlayerBoard();
   }
@@ -119,14 +128,16 @@ export class PlayerBoard {
    *
    * @param element is necessary due to the fact that some Spells are Universal, and we can't rely on their inherent element, it needs to come from the context
    */
-  private putSpellsInColumn(spells: Spell[], element: Element) {
-    for (const spell of spells) {
+  private putSpellsInColumn(spellNumber: Spell["number"][], element: Element) {
+    for (const spell of spellNumber) {
       this.putSpellOnBoard(spell, element);
     }
   }
 
-  putSpellOnBoard(spell: Spell, element: Element) {
-    const spellTemplate = Templates.spell(spell);
+  putSpellOnBoard(spellNumber: Spell["number"], element: Element) {
+    const spellTemplate = Templates.spell(
+      this.core.getSpellByNumber(spellNumber)!
+    );
     dojo.place(
       spellTemplate,
       this.getIdOfElementColumnForCurrentPlayer(element)
@@ -139,5 +150,64 @@ export class PlayerBoard {
 
   markAsCurrentPlayer() {
     dojo.addClass(Templates.idOfPlayerBoard(this.playerId), "current");
+  }
+
+  makeSpellsClickable() {
+    for (const element of this.playerBoard.elementSources) {
+      const columnId = this.getIdOfElementColumnForCurrentPlayer(element);
+      document.querySelectorAll(`#${columnId} .spell`).forEach((spellNode) => {
+        this.makeSpellClickable(spellNode);
+      });
+    }
+  }
+
+  private makeSpellClickable(spellNode: Node) {
+    dojo.addClass(spellNode, "clickable");
+    this.registerSpellClickHandlerOn(spellNode);
+  }
+
+  private registerSpellClickHandlerOn(spellNode: Node) {
+    const handler = dojo.connect(spellNode, "onclick", (evt: Event) => {
+      this.spellClickListeners.forEach((listener) => {
+        const spell = this.pickSpellFromEvent(evt)!;
+        listener(this.playerId, spell, spell.element);
+      });
+    });
+    this.spellClickHandlers.push(handler);
+  }
+
+  private pickSpellFromEvent(evt: Event) {
+    const htmlElement = evt.target as HTMLElement;
+    const id = htmlElement.id;
+    const spellNumber = id.split("_")[1];
+    return this.core.getSpellByNumber(+spellNumber!);
+  }
+
+  whenSpellClicked(onSpellOnBoardClicked: OnSpellOnBoardClicked) {
+    this.spellClickListeners.push(onSpellOnBoardClicked);
+  }
+
+  makeSpellsNotClickable() {
+    this.spellClickHandlers.forEach((handler) => {
+      dojo.disconnect(handler);
+    });
+    this.spellClickHandlers = [];
+    for (const element of this.playerBoard.elementSources) {
+      const columnId = this.getIdOfElementColumnForCurrentPlayer(element);
+      document.querySelectorAll(`#${columnId} .spell`).forEach((spellNode) => {
+        dojo.removeClass(spellNode, "clickable");
+      });
+    }
+  }
+
+  removeSpell(spell: Spell) {
+    for (const element of this.playerBoard.elementSources) {
+      const columnSpells = this.playerBoard.board[element];
+      const spellIndex = columnSpells.indexOf(spell.number);
+      if (spellIndex !== -1) {
+        columnSpells.splice(spellIndex, 1);
+        dojo.destroy(Templates.idOfSpell(spell));
+      }
+    }
   }
 }

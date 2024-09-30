@@ -118,7 +118,41 @@ $machinestates = array(
         "description" => "Resolving immediate effects of spells",
         "type" => "game",
         "action" => "st_immediateEffectsResolution",
-        "transitions" => ['placingPowerCrystals' => 6]
+        "transitions" => ['placingPowerCrystals' => 6, 'destroyTargetSelection' => 51, 'addFromSpellPool' => 52]
+    ),
+
+    //////////////////////////////////////////////////////////////////////////////
+    /////////// immediate effect: destroy target
+    ///////////
+    51 => array(
+        "name" => "destroyTargetSelection",
+        "description" => clienttranslate('${actplayer} is selecting a Spell to destroy'),
+        "descriptionmyturn" => clienttranslate('${you} must select a Spell to destroy'),
+        "type" => "activeplayer",
+        "possibleactions" => ["actSelectDestroyTarget"],
+        "transitions" => ['destroyTargetSelected' => 5]
+    ),
+
+
+    //////////////////////////////////////////////////////////////////////////////
+    /////////// immediate effect: add from spell pool
+    ///////////
+    52 => array(
+        "name" => "addFromSpellPool_spellSelection",
+        "description" => clienttranslate('${actplayer} is selecting a Spell from the Spell Pool'),
+        "descriptionmyturn" => clienttranslate('${you} must select a Spell from the Spell Pool'),
+        "type" => "activeplayer",
+        "possibleactions" => ["actSelectSpellFromSpellPool"],
+        "transitions" => ['spellPoolSpellSelected' => 5, 'universalSpellSelection' => 53]
+    ),
+
+    53 => array(
+        "name" => "addFromSpellPool_universalElementSpellDestination",
+        "description" => clienttranslate('${actplayer} is selecting where to put Universal Spell'),
+        "descriptionmyturn" => clienttranslate('${you} must select where to put Universal Spell'),
+        "type" => "activeplayer",
+        "possibleactions" => ["actAddFromSpellPool_PickTargetElement", "actAddFromSpellPool_CancelDestinationChoice"],
+        "transitions" => ['universalSpellDestination' => 5, 'cancel' => 52]
     ),
 
     6 => array(

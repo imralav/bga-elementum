@@ -237,7 +237,7 @@ define("src/client/common/Templates", ["require", "exports", "bgagame/elementum"
         Templates.spell = function (spell) {
             return elementum_1.Elementum.getInstance().format_block("jstpl_spell", {
                 spellNumber: spell.number,
-                spellSummaryData: "".concat(spell.number, ": ").concat(spell.name, " (").concat(spell.immediate ? "immediate" : "non_immediate", ")\n(").concat((0, utils_1.getIconForElement)(spell.element), ")"),
+                spellSummaryData: "".concat((0, utils_1.getIconForElement)(spell.element), " ").concat(spell.number, ": ").concat(spell.name, "\n(").concat(spell.spellActivation === "immediate" ? "immediate" : "passive", ")\n"),
                 effect: JSON.stringify(spell.effect, null, 2),
                 empoweredEffect: spell.empoweredEffect
                     ? JSON.stringify(spell.empoweredEffect, null, 2)
@@ -252,7 +252,10 @@ define("src/client/common/Templates", ["require", "exports", "bgagame/elementum"
             return "player-board-".concat(playerId);
         };
         Templates.idOfSpell = function (spell) {
-            return "spell_".concat(spell.number);
+            return Templates.idOfSpellByNumber(spell.number);
+        };
+        Templates.idOfSpellByNumber = function (spellNumber) {
+            return "spell_".concat(spellNumber);
         };
         Templates.idOfSpellColumn = function (playerId, element) {
             return "spells-column-".concat(playerId, "-").concat(element);
@@ -427,6 +430,8 @@ define("src/client/gui/PlayerBoard", ["require", "exports", "src/client/common/u
             this.core = core;
             this.elementSourceClickHandlers = [];
             this.elementSourceClickListeners = [];
+            this.spellClickHandlers = [];
+            this.spellClickListeners = [];
             this.createPlayerBoard();
         }
         PlayerBoard.prototype.createPlayerBoard = function () {
@@ -505,14 +510,14 @@ define("src/client/gui/PlayerBoard", ["require", "exports", "src/client/common/u
         PlayerBoard.prototype.getIdOfElementColumnForCurrentPlayer = function (element) {
             return "spells-column-".concat(this.playerId, "-").concat(element);
         };
-        PlayerBoard.prototype.putSpellsInColumn = function (spells, element) {
-            for (var _i = 0, spells_1 = spells; _i < spells_1.length; _i++) {
-                var spell = spells_1[_i];
+        PlayerBoard.prototype.putSpellsInColumn = function (spellNumber, element) {
+            for (var _i = 0, spellNumber_1 = spellNumber; _i < spellNumber_1.length; _i++) {
+                var spell = spellNumber_1[_i];
                 this.putSpellOnBoard(spell, element);
             }
         };
-        PlayerBoard.prototype.putSpellOnBoard = function (spell, element) {
-            var spellTemplate = Templates_2.Templates.spell(spell);
+        PlayerBoard.prototype.putSpellOnBoard = function (spellNumber, element) {
+            var spellTemplate = Templates_2.Templates.spell(this.core.getSpellByNumber(spellNumber));
             dojo.place(spellTemplate, this.getIdOfElementColumnForCurrentPlayer(element));
         };
         PlayerBoard.prototype.whenElementSourceClicked = function (listener) {
@@ -520,6 +525,63 @@ define("src/client/gui/PlayerBoard", ["require", "exports", "src/client/common/u
         };
         PlayerBoard.prototype.markAsCurrentPlayer = function () {
             dojo.addClass(Templates_2.Templates.idOfPlayerBoard(this.playerId), "current");
+        };
+        PlayerBoard.prototype.makeSpellsClickable = function () {
+            var _this = this;
+            for (var _i = 0, _a = this.playerBoard.elementSources; _i < _a.length; _i++) {
+                var element = _a[_i];
+                var columnId = this.getIdOfElementColumnForCurrentPlayer(element);
+                document.querySelectorAll("#".concat(columnId, " .spell")).forEach(function (spellNode) {
+                    _this.makeSpellClickable(spellNode);
+                });
+            }
+        };
+        PlayerBoard.prototype.makeSpellClickable = function (spellNode) {
+            dojo.addClass(spellNode, "clickable");
+            this.registerSpellClickHandlerOn(spellNode);
+        };
+        PlayerBoard.prototype.registerSpellClickHandlerOn = function (spellNode) {
+            var _this = this;
+            var handler = dojo.connect(spellNode, "onclick", function (evt) {
+                _this.spellClickListeners.forEach(function (listener) {
+                    var spell = _this.pickSpellFromEvent(evt);
+                    listener(_this.playerId, spell, spell.element);
+                });
+            });
+            this.spellClickHandlers.push(handler);
+        };
+        PlayerBoard.prototype.pickSpellFromEvent = function (evt) {
+            var htmlElement = evt.target;
+            var id = htmlElement.id;
+            var spellNumber = id.split("_")[1];
+            return this.core.getSpellByNumber(+spellNumber);
+        };
+        PlayerBoard.prototype.whenSpellClicked = function (onSpellOnBoardClicked) {
+            this.spellClickListeners.push(onSpellOnBoardClicked);
+        };
+        PlayerBoard.prototype.makeSpellsNotClickable = function () {
+            this.spellClickHandlers.forEach(function (handler) {
+                dojo.disconnect(handler);
+            });
+            this.spellClickHandlers = [];
+            for (var _i = 0, _a = this.playerBoard.elementSources; _i < _a.length; _i++) {
+                var element = _a[_i];
+                var columnId = this.getIdOfElementColumnForCurrentPlayer(element);
+                document.querySelectorAll("#".concat(columnId, " .spell")).forEach(function (spellNode) {
+                    dojo.removeClass(spellNode, "clickable");
+                });
+            }
+        };
+        PlayerBoard.prototype.removeSpell = function (spell) {
+            for (var _i = 0, _a = this.playerBoard.elementSources; _i < _a.length; _i++) {
+                var element = _a[_i];
+                var columnSpells = this.playerBoard.board[element];
+                var spellIndex = columnSpells.indexOf(spell.number);
+                if (spellIndex !== -1) {
+                    columnSpells.splice(spellIndex, 1);
+                    dojo.destroy(Templates_2.Templates.idOfSpell(spell));
+                }
+            }
         };
         return PlayerBoard;
     }());
@@ -553,8 +615,8 @@ define("src/client/gui/Spells", ["require", "exports", "src/client/common/Templa
             this.forEachSpellInDom(function (spell) { return _this.makeSpellUnClickable(spell); });
         };
         Spells.prototype.addSpellsToDOMAndMakeThenClickable = function (spells) {
-            for (var _i = 0, spells_2 = spells; _i < spells_2.length; _i++) {
-                var spell = spells_2[_i];
+            for (var _i = 0, spells_1 = spells; _i < spells_1.length; _i++) {
+                var spell = spells_1[_i];
                 var spellBlock = Templates_3.Templates.spell(spell);
                 dojo.place(spellBlock, this.containerId);
             }
@@ -647,10 +709,10 @@ define("src/client/gui/Spells", ["require", "exports", "src/client/common/Templa
     }());
     exports.Spells = Spells;
 });
-define("src/client/gui/animations", ["require", "exports"], function (require, exports) {
+define("src/client/gui/animations", ["require", "exports", "src/client/common/Templates"], function (require, exports, Templates_4) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.moveElementOnAnimationSurface = exports.cloneOnAnimationSurface = void 0;
+    exports.spawnSpellOnBoard = exports.despawnSpell = exports.despawnElement = exports.moveElementOnAnimationSurface = void 0;
     function cloneOnAnimationSurface(idOfElementToClone, postfix) {
         var _a;
         var elementToClone = $(idOfElementToClone);
@@ -673,9 +735,7 @@ define("src/client/gui/animations", ["require", "exports"], function (require, e
         var clone = elementToClone.cloneNode(true);
         clone.id = newId;
         var fullmatrix = "";
-        while (parent != animationSurface.parentNode &&
-            parent != null &&
-            parent != document) {
+        while (parent != animationSurface.parentNode && parent != null) {
             var styleOfParent = window.getComputedStyle(parent);
             var transformationMatrixOfParent = styleOfParent.transform;
             if (transformationMatrixOfParent &&
@@ -694,7 +754,6 @@ define("src/client/gui/animations", ["require", "exports"], function (require, e
         clone.style.position = "absolute";
         return clone;
     }
-    exports.cloneOnAnimationSurface = cloneOnAnimationSurface;
     function moveElementOnAnimationSurface(elementToMoveId, newParentId, durationInMs) {
         var _a;
         if (durationInMs === void 0) { durationInMs = 1000; }
@@ -727,8 +786,24 @@ define("src/client/gui/animations", ["require", "exports"], function (require, e
         });
     }
     exports.moveElementOnAnimationSurface = moveElementOnAnimationSurface;
+    function despawnElement(elementId, durationInMs) {
+        if (durationInMs === void 0) { durationInMs = 2000; }
+        return moveElementOnAnimationSurface(elementId, "cards-spawn-point", durationInMs);
+    }
+    exports.despawnElement = despawnElement;
+    function despawnSpell(spellNumber, durationInMs) {
+        if (durationInMs === void 0) { durationInMs = 2000; }
+        var spellNodeId = Templates_4.Templates.idOfSpellByNumber(spellNumber);
+        return despawnElement(spellNodeId, durationInMs);
+    }
+    exports.despawnSpell = despawnSpell;
+    function spawnSpellOnBoard(spell) {
+        var spellTemplate = Templates_4.Templates.spell(spell);
+        return dojo.place(spellTemplate, "cards-spawn-point");
+    }
+    exports.spawnSpellOnBoard = spawnSpellOnBoard;
 });
-define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/client/common/Templates", "src/client/common/variation", "src/client/gui/Crystals", "src/client/gui/GameInfoPanel", "src/client/gui/PlayerBoard", "src/client/gui/Spells", "src/client/gui/animations"], function (require, exports, Templates_4, variation_1, Crystals_1, GameInfoPanel_1, PlayerBoard_1, Spells_1, animations_1) {
+define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/client/common/Templates", "src/client/common/variation", "src/client/gui/Crystals", "src/client/gui/GameInfoPanel", "src/client/gui/PlayerBoard", "src/client/gui/Spells", "src/client/gui/animations"], function (require, exports, Templates_5, variation_1, Crystals_1, GameInfoPanel_1, PlayerBoard_1, Spells_1, animations_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ElementumGameInterface = void 0;
@@ -758,6 +833,11 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
         ElementumGameInterface.prototype.whenSpellPoolClicked = function (onSpellClicked) {
             this.spellPool.whenSpellClicked(onSpellClicked);
         };
+        ElementumGameInterface.prototype.whenSpellOnBoardClicked = function (onSpellOnBoardClicked) {
+            Object.values(this.playerBoards).forEach(function (playerBoard) {
+                playerBoard.whenSpellClicked(onSpellOnBoardClicked);
+            });
+        };
         ElementumGameInterface.prototype.whenElementSourceClickedOnCurrentPlayer = function (onElementClicked) {
             this.playerBoards[this.core.getCurrentPlayerId()].whenElementSourceClicked(onElementClicked);
         };
@@ -784,19 +864,15 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
         };
         ElementumGameInterface.prototype.putSpellOnBoard = function (playerId, spell, column) {
             if (!this.spellExistsOnBoard(spell)) {
-                this.spawnSpellOnBoard(spell);
+                (0, animations_1.spawnSpellOnBoard)(spell);
             }
-            var columnId = Templates_4.Templates.idOfSpellColumn(playerId, column !== null && column !== void 0 ? column : spell.element);
-            var spellId = Templates_4.Templates.idOfSpell(spell);
+            var columnId = Templates_5.Templates.idOfSpellColumn(playerId, column !== null && column !== void 0 ? column : spell.element);
+            var spellId = Templates_5.Templates.idOfSpell(spell);
             this.deselectSpell(spell.number);
             (0, animations_1.moveElementOnAnimationSurface)(spellId, columnId, this.animationDurationInMs);
         };
         ElementumGameInterface.prototype.spellExistsOnBoard = function (spell) {
-            return !!$(Templates_4.Templates.idOfSpell(spell));
-        };
-        ElementumGameInterface.prototype.spawnSpellOnBoard = function (spell) {
-            var spellTemplate = Templates_4.Templates.spell(spell);
-            return dojo.place(spellTemplate, "cards-spawn-point");
+            return !!$(Templates_5.Templates.idOfSpell(spell));
         };
         ElementumGameInterface.prototype.replaceHand = function (hand) {
             var _this = this;
@@ -809,7 +885,7 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
             var _this = this;
             var promises = [];
             this.playerHand.forEachSpellInDom(function (spell) {
-                promises.push((0, animations_1.moveElementOnAnimationSurface)(spell.id, "cards-spawn-point", (0, variation_1.randomVariation)(_this.animationDurationInMs, 500)).then(function () {
+                promises.push((0, animations_1.despawnElement)(spell.id, (0, variation_1.randomVariation)(_this.animationDurationInMs, 500)).then(function () {
                     dojo.destroy(spell);
                 }));
             });
@@ -819,9 +895,9 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
             var _this = this;
             hand.forEach(function (spell) {
                 if (!_this.spellExistsOnBoard(spell)) {
-                    _this.spawnSpellOnBoard(spell);
+                    (0, animations_1.spawnSpellOnBoard)(spell);
                 }
-                (0, animations_1.moveElementOnAnimationSurface)(Templates_4.Templates.idOfSpell(spell), _this.playerHand.containerId, (0, variation_1.randomVariation)(_this.animationDurationInMs, 500)).then(function () {
+                (0, animations_1.moveElementOnAnimationSurface)(Templates_5.Templates.idOfSpell(spell), _this.playerHand.containerId, (0, variation_1.randomVariation)(_this.animationDurationInMs, 500)).then(function () {
                     _this.playerHand.addSpell(spell);
                 });
             });
@@ -841,10 +917,10 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
         ElementumGameInterface.prototype.putSpellInSpellPool = function (spellNumber) {
             var spell = this.core.getSpellByNumber(spellNumber);
             if (!this.spellExistsOnBoard(spell)) {
-                this.spawnSpellOnBoard(spell);
+                (0, animations_1.spawnSpellOnBoard)(spell);
             }
             var containerId = "spell-pool";
-            var spellId = Templates_4.Templates.idOfSpell(spell);
+            var spellId = Templates_5.Templates.idOfSpell(spell);
             this.deselectSpell(spell.number);
             (0, animations_1.moveElementOnAnimationSurface)(spellId, containerId, this.animationDurationInMs);
             this.spellPool.addSpell(spell);
@@ -873,6 +949,27 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
         ElementumGameInterface.prototype.makeElementSourcesNotClickableForCurrentPlayer = function () {
             this.playerBoards[this.core.getCurrentPlayerId()].makeElementSourcesNotClickable();
         };
+        ElementumGameInterface.prototype.makeSpellsClickableOnAllBoardsBesidesCurrentPlayer = function () {
+            var _this = this;
+            var currentPlayerId = this.core.getCurrentPlayerId().toString();
+            Object.keys(this.playerBoards)
+                .filter(function (playerId) { return playerId !== currentPlayerId; })
+                .forEach(function (playerId) {
+                _this.playerBoards[playerId].makeSpellsClickable();
+            });
+        };
+        ElementumGameInterface.prototype.makeSpellsUnclickableOnAllBoards = function () {
+            Object.values(this.playerBoards).forEach(function (playerBoard) {
+                playerBoard.makeSpellsNotClickable();
+            });
+        };
+        ElementumGameInterface.prototype.destroySpellOnBoard = function (victimPlayerId, spellNumber) {
+            var spell = this.core.getSpellByNumber(spellNumber);
+            var playerBoard = this.playerBoards[victimPlayerId];
+            (0, animations_1.despawnSpell)(spellNumber, this.animationDurationInMs).then(function () {
+                playerBoard.removeSpell(spell);
+            });
+        };
         return ElementumGameInterface;
     }());
     exports.ElementumGameInterface = ElementumGameInterface;
@@ -890,7 +987,8 @@ define("src/client/states/NoopState", ["require", "exports"], function (require,
         }
         NoopState.prototype.onEnter = function () { };
         NoopState.prototype.onUpdateActionButtons = function (args) { };
-        NoopState.prototype.spellClicked = function (spell) { };
+        NoopState.prototype.spellOnHandClicked = function (spell) { };
+        NoopState.prototype.spellOnBoardClicked = function (playerId, spell, element) { };
         NoopState.prototype.spellOnSpellPoolClicked = function (spell) { };
         NoopState.prototype.elementSourceClicked = function (playerId, element) { };
         NoopState.prototype.onLeave = function () { };
@@ -971,6 +1069,20 @@ define("src/client/ActionsAPI", ["require", "exports", "bgagame/elementum"], fun
                 });
             });
         };
+        ActionsAPI.destroyTarget = function (spellNumber, victimPlayerId) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2, elementum_2.Elementum.getInstance()
+                            .performAction("actSelectDestroyTarget", {
+                            spellNumber: spellNumber,
+                            victimPlayerId: victimPlayerId,
+                        })
+                            .catch(function () {
+                            throw new Error("Error destroying target");
+                        })];
+                });
+            });
+        };
         return ActionsAPI;
     }());
     exports.ActionsAPI = ActionsAPI;
@@ -986,7 +1098,7 @@ define("src/client/states/PickSpellState", ["require", "exports", "src/client/Ac
             _this.gui = gui;
             return _this;
         }
-        PickSpellState.prototype.spellClicked = function (spell) {
+        PickSpellState.prototype.spellOnHandClicked = function (spell) {
             var _this = this;
             console.log("Spell clicked", spell);
             ActionsAPI_1.ActionsAPI.pickSpell(spell.number)
@@ -1137,7 +1249,37 @@ define("src/client/gui/Announcement", ["require", "exports"], function (require,
     }
     exports.announce = announce;
 });
-define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook/common", "src/client/gui/ElementumGameInterface", "src/client/states/NoopState", "src/client/states/PickSpellState", "src/client/states/SpellDestinationChoiceState", "src/client/common/Templates", "src/client/Notifications", "src/client/states/PlayersDraftState", "src/client/gui/GameInfoPanel", "src/client/states/UniversalElementDestinationChoiceState", "src/client/gui/Announcement"], function (require, exports, Gamegui, CommonMixer, ElementumGameInterface_1, NoopState_5, PickSpellState_1, SpellDestinationChoiceState_1, Templates_5, Notifications_1, PlayersDraftState_1, GameInfoPanel_2, UniversalElementDestinationChoiceState_1, Announcement_1) {
+define("src/client/states/DestroyTargetSelectionState", ["require", "exports", "src/client/ActionsAPI", "src/client/states/NoopState"], function (require, exports, ActionsAPI_5, NoopState_5) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.DestroyTargetSelectionState = void 0;
+    var DestroyTargetSelectionState = (function (_super) {
+        __extends(DestroyTargetSelectionState, _super);
+        function DestroyTargetSelectionState(gui) {
+            var _this = _super.call(this) || this;
+            _this.gui = gui;
+            return _this;
+        }
+        DestroyTargetSelectionState.prototype.onEnter = function () {
+            this.gui.makeSpellsClickableOnAllBoardsBesidesCurrentPlayer();
+        };
+        DestroyTargetSelectionState.prototype.spellOnBoardClicked = function (playerId, spell, element) {
+            ActionsAPI_5.ActionsAPI.destroyTarget(spell.number, playerId)
+                .then(function () {
+                console.log("Destroying target", spell.number, playerId, element);
+            })
+                .catch(function (error) {
+                console.error("Error destroying target", error);
+            });
+        };
+        DestroyTargetSelectionState.prototype.onLeave = function () {
+            this.gui.makeSpellsUnclickableOnAllBoards();
+        };
+        return DestroyTargetSelectionState;
+    }(NoopState_5.NoopState));
+    exports.DestroyTargetSelectionState = DestroyTargetSelectionState;
+});
+define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook/common", "src/client/gui/ElementumGameInterface", "src/client/states/NoopState", "src/client/states/PickSpellState", "src/client/states/SpellDestinationChoiceState", "src/client/common/Templates", "src/client/Notifications", "src/client/states/PlayersDraftState", "src/client/gui/GameInfoPanel", "src/client/states/UniversalElementDestinationChoiceState", "src/client/gui/Announcement", "src/client/states/DestroyTargetSelectionState"], function (require, exports, Gamegui, CommonMixer, ElementumGameInterface_1, NoopState_6, PickSpellState_1, SpellDestinationChoiceState_1, Templates_6, Notifications_1, PlayersDraftState_1, GameInfoPanel_2, UniversalElementDestinationChoiceState_1, Announcement_1, DestroyTargetSelectionState_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Elementum = void 0;
@@ -1169,7 +1311,10 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
                 core: this,
             });
             this.gui.whenSpellOnHandClicked(function (spell) {
-                _this.getCurrentState().spellClicked(spell);
+                _this.getCurrentState().spellOnHandClicked(spell);
+            });
+            this.gui.whenSpellOnBoardClicked(function (playerId, spell, element) {
+                _this.getCurrentState().spellOnBoardClicked(playerId, spell, element);
             });
             this.gui.whenSpellPoolClicked(function (spell) {
                 _this.getCurrentState().spellOnSpellPoolClicked(spell);
@@ -1179,11 +1324,11 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
             });
             this.createStates();
             GameInfoPanel_2.GameInfoPanel.updateCurrentRound(gamedatas.currentRound);
-            console.log("Announcement!!!!");
             (0, Announcement_1.announce)("Current round: " + gamedatas.currentRound + "/3", 2000);
         };
         Elementum.prototype.getCurrentStateName = function () {
-            return (this.gamedatas.gamestate.private_state.name ||
+            var _a;
+            return (((_a = this.gamedatas.gamestate.private_state) === null || _a === void 0 ? void 0 : _a.name) ||
                 this.gamedatas.gamestate.name ||
                 "noop");
         };
@@ -1195,8 +1340,9 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
                 spellChoice: new PickSpellState_1.PickSpellState(this.gui),
                 spellDestinationChoice: new SpellDestinationChoiceState_1.SpellDestinationChoiceState(this, this.gui),
                 playersDraft: new PlayersDraftState_1.PlayersDraftState(this, this.gui),
-                noop: new NoopState_5.NoopState(),
+                noop: new NoopState_6.NoopState(),
                 universalElementSpellDestination: new UniversalElementDestinationChoiceState_1.UniversalElementDestinationChoiceState(this.gui),
+                destroyTargetSelection: new DestroyTargetSelectionState_1.DestroyTargetSelectionState(this.gui),
             };
         };
         Elementum.prototype.getStateByName = function (stateName) {
@@ -1214,7 +1360,7 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
             this.getStateByName(stateName).onEnter();
         };
         Elementum.prototype.setTextBeforeCancelButton = function (text) {
-            dojo.place(Templates_5.Templates.textBeforeCancelButton(text), "cancel", "before");
+            dojo.place(Templates_6.Templates.textBeforeCancelButton(text), "cancel", "before");
         };
         Elementum.prototype.onLeavingState = function (stateName) {
             console.log("Leaving state: " + stateName);
@@ -1266,6 +1412,12 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
             });
             (0, Notifications_1.onNotification)("everyoneLostCrystal").do(function () {
                 _this.gui.crystals.moveCrystalFromAllPlayersToPile();
+            });
+            (0, Notifications_1.onNotification)("playerDestroyedSpell").do(function (notification) {
+                console.log("Spell destroyed", notification.args);
+                var victimPlayerId = notification.args.victimPlayerId;
+                var spellNumber = notification.args.spellNumber;
+                _this.gui.destroySpellOnBoard(victimPlayerId, spellNumber);
             });
         };
         Elementum.prototype.performAction = function (action, args) {

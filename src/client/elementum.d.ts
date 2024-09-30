@@ -19,7 +19,7 @@ declare global {
   }
   type PlayerBoardAndElementSources = {
     elementSources: ElementSource["type"][];
-    board: Record<ElementSource["type"], Spell[]>;
+    board: Record<ElementSource["type"], Spell["number"][]>;
   };
 
   /** @gameSpecific Add game specific gamedatas arguments here. See {@link Gamedatas} for more information. */
@@ -57,6 +57,7 @@ declare global {
     actUseSpellPool: string;
     actCancelDraftChoice: string;
     actPickTargetElement: string;
+    actSelectDestroyTarget: string;
   }
 
   type PlayerId = string;

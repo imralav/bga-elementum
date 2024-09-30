@@ -39,6 +39,14 @@ class ImmediateEffectsResolution
         Elementum::get()->globals->set(self::SPELLS_PLAYED_THIS_TURN_KEY, $immediateSpellsPlayedThisTurn);
     }
 
+    public static function spellResolvedFor(int $playerId)
+    {
+        Elementum::get()->debug("Spell resolved for player $playerId");
+        $immediateSpellsPlayedThisTurn = Elementum::get()->globals->get(self::SPELLS_PLAYED_THIS_TURN_KEY);
+        unset($immediateSpellsPlayedThisTurn[$playerId]);
+        Elementum::get()->globals->set(self::SPELLS_PLAYED_THIS_TURN_KEY, $immediateSpellsPlayedThisTurn);
+    }
+
     public function __construct()
     {
         $this->spellsPlayedThisTurn = Elementum::get()->globals->get(self::SPELLS_PLAYED_THIS_TURN_KEY);
@@ -84,6 +92,31 @@ class ImmediateEffectsResolution
             $allPlayerIds = array_keys($allPlayers);
             Crystals::decrementMany($allPlayerIds);
             Notifications::notifyEveryoneLostCrystal();
+        }
+    }
+
+    /**
+     * This function will prepare the next state transition for the next player who needs to make a decision.
+     */
+    public function setupGameStateForNextImmediateEffect()
+    {
+        $nextPlayerId = array_key_first($this->spellsPlayedThisTurn);
+        $spellNumber = $this->spellsPlayedThisTurn[$nextPlayerId];
+        $spell = Elementum::get()->getSpellByNumber($spellNumber);
+        $effect = $spell->effect;
+        $elementum = Elementum::get();
+        switch ($effect->type) {
+            case DESTROY_SPELL_EFFECT_TYPE:
+                $elementum->gamestate->changeActivePlayer($nextPlayerId);
+                $elementum->gamestate->nextState('destroyTargetSelection');
+                break;
+            case ADD_FROM_SPELL_POOL_SPELL_EFFECT_TYPE:
+                $elementum->gamestate->changeActivePlayer($nextPlayerId);
+                $elementum->gamestate->nextState('addFromSpellPool');
+                break;
+            default:
+                $elementum->gamestate->nextState('placingPowerCrystals');
+                break;
         }
     }
 }

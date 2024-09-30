@@ -9,9 +9,11 @@ export class Templates {
   static spell(spell: Spell) {
     return Elementum.getInstance().format_block("jstpl_spell", {
       spellNumber: spell.number,
-      spellSummaryData: `${spell.number}: ${spell.name} (${
-        spell.immediate ? "immediate" : "non_immediate"
-      })\n(${getIconForElement(spell.element)})`,
+      spellSummaryData: `${getIconForElement(spell.element)} ${spell.number}: ${
+        spell.name
+      }\n(${
+        spell.spellActivation === "immediate" ? "immediate" : "passive"
+      })\n`,
       effect: JSON.stringify(spell.effect, null, 2),
       empoweredEffect: spell.empoweredEffect
         ? JSON.stringify(spell.empoweredEffect, null, 2)
@@ -32,7 +34,11 @@ export class Templates {
   }
 
   static idOfSpell(spell: Spell) {
-    return `spell_${spell.number}`;
+    return Templates.idOfSpellByNumber(spell.number);
+  }
+
+  static idOfSpellByNumber(spellNumber: Spell["number"]) {
+    return `spell_${spellNumber}`;
   }
 
   static idOfSpellColumn(playerId: PlayerId, element: Element) {

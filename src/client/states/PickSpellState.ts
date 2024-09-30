@@ -8,7 +8,7 @@ export class PickSpellState extends NoopState {
     super();
   }
 
-  spellClicked(spell: Spell): void {
+  spellOnHandClicked(spell: Spell): void {
     console.log("Spell clicked", spell);
     ActionsAPI.pickSpell(spell.number)
       .then(() => {

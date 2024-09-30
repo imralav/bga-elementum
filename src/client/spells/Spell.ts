@@ -8,7 +8,7 @@ export interface Spell {
   number: number;
   name: string;
   element: Element;
-  immediate: boolean;
+  spellActivation: "passive" | "immediate";
   effect: SpellEffect;
   empoweredEffect?: SpellEffect;
 }

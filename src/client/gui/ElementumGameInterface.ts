@@ -5,9 +5,18 @@ import { Spell } from "../spells/Spell";
 import { Element } from "../spells/elementum.types";
 import { Crystals } from "./Crystals";
 import { GameInfoPanel } from "./GameInfoPanel";
-import { OnElementSourceClicked, PlayerBoard } from "./PlayerBoard";
+import {
+  OnElementSourceClicked,
+  OnSpellOnBoardClicked,
+  PlayerBoard,
+} from "./PlayerBoard";
 import { OnSpellClicked, Spells } from "./Spells";
-import { moveElementOnAnimationSurface } from "./animations";
+import {
+  despawnElement,
+  despawnSpell,
+  moveElementOnAnimationSurface,
+  spawnSpellOnBoard,
+} from "./animations";
 
 export interface ElementumGameInterfaceInput {
   spellPool: Spell[];
@@ -68,6 +77,12 @@ export class ElementumGameInterface {
     this.spellPool.whenSpellClicked(onSpellClicked);
   }
 
+  whenSpellOnBoardClicked(onSpellOnBoardClicked: OnSpellOnBoardClicked) {
+    Object.values(this.playerBoards).forEach((playerBoard) => {
+      playerBoard.whenSpellClicked(onSpellOnBoardClicked);
+    });
+  }
+
   whenElementSourceClickedOnCurrentPlayer(
     onElementClicked: OnElementSourceClicked
   ) {
@@ -104,7 +119,7 @@ export class ElementumGameInterface {
 
   putSpellOnBoard(playerId: PlayerId, spell: Spell, column?: Element) {
     if (!this.spellExistsOnBoard(spell)) {
-      this.spawnSpellOnBoard(spell);
+      spawnSpellOnBoard(spell);
     }
     const columnId = Templates.idOfSpellColumn(
       playerId,
@@ -123,11 +138,6 @@ export class ElementumGameInterface {
     return !!$(Templates.idOfSpell(spell));
   }
 
-  spawnSpellOnBoard(spell: Spell) {
-    const spellTemplate = Templates.spell(spell);
-    return dojo.place(spellTemplate, "cards-spawn-point");
-  }
-
   replaceHand(hand: Spell[]) {
     this.moveEachSpellToSpawnPointAndDestroy().then(() => {
       this.playerHand.clearSpells();
@@ -139,9 +149,8 @@ export class ElementumGameInterface {
     const promises: Promise<void>[] = [];
     this.playerHand.forEachSpellInDom((spell) => {
       promises.push(
-        moveElementOnAnimationSurface(
+        despawnElement(
           spell.id,
-          "cards-spawn-point",
           randomVariation(this.animationDurationInMs, 500)
         ).then(() => {
           dojo.destroy(spell);
@@ -154,7 +163,7 @@ export class ElementumGameInterface {
   private spawnSpellsAndAddToHand(hand: Spell[]) {
     hand.forEach((spell) => {
       if (!this.spellExistsOnBoard(spell)) {
-        this.spawnSpellOnBoard(spell);
+        spawnSpellOnBoard(spell);
       }
       moveElementOnAnimationSurface(
         Templates.idOfSpell(spell),
@@ -185,7 +194,7 @@ export class ElementumGameInterface {
   putSpellInSpellPool(spellNumber: Spell["number"]) {
     const spell = this.core.getSpellByNumber(spellNumber)!;
     if (!this.spellExistsOnBoard(spell)) {
-      this.spawnSpellOnBoard(spell);
+      spawnSpellOnBoard(spell);
     }
     const containerId = "spell-pool";
     const spellId = Templates.idOfSpell(spell);
@@ -228,5 +237,28 @@ export class ElementumGameInterface {
     this.playerBoards[
       this.core.getCurrentPlayerId()
     ]!.makeElementSourcesNotClickable();
+  }
+
+  makeSpellsClickableOnAllBoardsBesidesCurrentPlayer() {
+    const currentPlayerId = this.core.getCurrentPlayerId().toString();
+    Object.keys(this.playerBoards)
+      .filter((playerId) => playerId !== currentPlayerId)
+      .forEach((playerId) => {
+        this.playerBoards[playerId]!.makeSpellsClickable();
+      });
+  }
+
+  makeSpellsUnclickableOnAllBoards() {
+    Object.values(this.playerBoards).forEach((playerBoard) => {
+      playerBoard.makeSpellsNotClickable();
+    });
+  }
+
+  destroySpellOnBoard(victimPlayerId: PlayerId, spellNumber: number) {
+    const spell = this.core.getSpellByNumber(spellNumber)!;
+    const playerBoard = this.playerBoards[victimPlayerId]!;
+    despawnSpell(spellNumber, this.animationDurationInMs).then(() => {
+      playerBoard.removeSpell(spell);
+    });
   }
 }

@@ -96,4 +96,18 @@ class Notifications
     {
         Elementum::get()->notifyAllPlayers('everyoneLostCrystal', 'Everyone lost a Crystal', []);
     }
+
+    public static function notifyPlayerDestroyedSpell(int $playerId, Spell $spell, int $victimPlayerId)
+    {
+        $playerName = Elementum::get()->getPlayerNameById($playerId);
+        $victimName = Elementum::get()->getPlayerNameById($victimPlayerId);
+        $spellName = $spell->name;
+        Elementum::get()->notifyAllPlayers('playerDestroyedSpell', '${playerName} destroyed ${spellNumber}:${spellName} on ${victimName}\'s board', ['spellNumber' => $spell->number, 'playerId' => $playerId, 'playerName' => $playerName, 'victimName' => $victimName, 'spellName' => $spellName, 'victimPlayerId' => $victimPlayerId]);
+    }
+
+    public static function notifyPlayerAddedSpellFromPool(int $playerId, Spell $spell)
+    {
+        $playerName = Elementum::get()->getPlayerNameById($playerId);
+        Elementum::get()->notifyAllPlayers('playerAddedSpellFromPool', '${playerName} added ${spellNumber}:${spellName} from the Spell Pool to their board', ['spellNumber' => $spell->number, 'playerId' => $playerId, 'playerName' => $playerName, 'spellName' => $spell->name]);
+    }
 }

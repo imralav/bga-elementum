@@ -144,4 +144,22 @@ class Decks
             $this->cards->moveCards($cardIds, 'hand', $nextPlayerId);
         }
     }
+
+    public function discardSpell(int $spellNumber, int $playerId)
+    {
+        $card = $this->findCardInPlayerBoard($spellNumber, $playerId);
+        $this->cards->moveCard($card['id'], 'discard');
+    }
+
+    private function findCardInPlayerBoard(int $spellNumber, int $playerId)
+    {
+        $cardsInPlayerBoard = $this->cards->getCardsOfTypeInLocation($spellNumber, null, 'board', $playerId);
+        return !empty($cardsInPlayerBoard) ? array_shift($cardsInPlayerBoard) : null;
+    }
+
+    public function addSpellFromPool(int $playerId, int $spellNumber)
+    {
+        $card = $this->findCardInSpellPool($spellNumber);
+        $this->cards->moveCard($card['id'], 'board', $playerId);
+    }
 }

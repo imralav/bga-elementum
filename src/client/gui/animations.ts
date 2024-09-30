@@ -1,4 +1,6 @@
 import { clone } from "dojo/_base/lang";
+import { Spell } from "../spells/Spell";
+import { Templates } from "../common/Templates";
 
 /**
  * Taken from VictoriaLa's codepen: https://codepen.io/VictoriaLa/pen/gORvdJo
@@ -9,10 +11,7 @@ import { clone } from "dojo/_base/lang";
  * @param postfix - postfix to add to the id of the cloned element, as id must be unique
  * @returns the cloned element
  */
-export function cloneOnAnimationSurface(
-  idOfElementToClone: string,
-  postfix: string
-) {
+function cloneOnAnimationSurface(idOfElementToClone: string, postfix: string) {
   var elementToClone = $(idOfElementToClone);
   if (!elementToClone) {
     console.error("Element to clone not found", idOfElementToClone);
@@ -38,11 +37,7 @@ export function cloneOnAnimationSurface(
   // this caclculates transitive maxtrix for transformations of the parent
   // so we can apply it oversurface to match exact scale and rotate
   var fullmatrix = "";
-  while (
-    parent != animationSurface.parentNode &&
-    parent != null &&
-    parent != document
-  ) {
+  while (parent != animationSurface.parentNode && parent != null) {
     var styleOfParent = window.getComputedStyle(parent);
     var transformationMatrixOfParent = styleOfParent.transform; //|| "matrix(1,0,0,1,0,0)";
 
@@ -124,4 +119,25 @@ export function moveElementOnAnimationSurface(
       resolve();
     }, durationInMs);
   });
+}
+
+export function despawnElement(elementId: string, durationInMs: number = 2000) {
+  return moveElementOnAnimationSurface(
+    elementId,
+    "cards-spawn-point",
+    durationInMs
+  );
+}
+
+export function despawnSpell(
+  spellNumber: Spell["number"],
+  durationInMs: number = 2000
+) {
+  const spellNodeId = Templates.idOfSpellByNumber(spellNumber);
+  return despawnElement(spellNodeId, durationInMs);
+}
+
+export function spawnSpellOnBoard(spell: Spell) {
+  const spellTemplate = Templates.spell(spell);
+  return dojo.place(spellTemplate, "cards-spawn-point");
 }

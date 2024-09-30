@@ -13,10 +13,15 @@ class PlayerBoard extends  \APP_DbObject
     private $playerId;
     public array $elementSources;
     /**
-     * @var array<string, array<string, int[]>>
+     * @var array<string, int[]> a map from Element to a list of Spell Numbers
      */
     public array $board;
 
+    /**
+     * @param string $playerId
+     * @param array<string> $elementSources
+     * @param array<string, int[]> $board
+     */
     private function __construct($playerId, $elementSources, $board)
     {
         $this->playerId = $playerId;
@@ -24,6 +29,10 @@ class PlayerBoard extends  \APP_DbObject
         $this->board = $board;
     }
 
+    /**
+     * @param string $playerId
+     * @param array<string> $elementSources
+     */
     public static function init($playerId, $elementSources)
     {
         $board = array_fill_keys($elementSources, array());
@@ -58,12 +67,12 @@ class PlayerBoard extends  \APP_DbObject
 
     public function putSpellOnBoard(Spell $spell)
     {
-        $this->putSpellOnBoardAtElement($spell, $spell->element);
+        $this->putSpellOnBoardAtElement($spell->number, $spell->element);
     }
 
-    public function putSpellOnBoardAtElement(Spell $spell, string $element)
+    public function putSpellOnBoardAtElement(int $spellNumber, string $element)
     {
-        $this->board[$element][] = $spell;
+        $this->board[$element][] = $spellNumber;
         Elementum::get()->dump("====================Adding to player board", $this->board);
         $this->update();
     }
@@ -81,5 +90,15 @@ class PlayerBoard extends  \APP_DbObject
         $earthCount = $this->getAmountOfElement('earth');
         $airCount = $this->getAmountOfElement('air');
         return new PlayerBoardSummary($fireCount, $waterCount, $earthCount, $airCount);
+    }
+
+    public function destroySpell(int $spellNumberToDestroy)
+    {
+        foreach ($this->board as $element => $spells) {
+            $this->board[$element] = array_values(array_filter($spells, function ($spellNumberOnBoard) use ($spellNumberToDestroy) {
+                return $spellNumberOnBoard !== $spellNumberToDestroy;
+            }));
+        }
+        $this->update();
     }
 }

@@ -19,6 +19,7 @@ use Elementum\PlayerMoveChoices\PickedSpells;
 use Elementum\PlayerMoveChoices\SpellPoolChoiceResolver;
 use Elementum\PlayerMoveChoices\SpellPoolChoiceResolverInput;
 use Elementum\Players;
+use Elementum\Spells\SpellActivation;
 
 class ElementumGameLogic
 {
@@ -62,14 +63,14 @@ class ElementumGameLogic
         $instance->setFirstRound();
         $spellsFor2PlayerGame = $instance->exludeSpellsFor2PlayerGame(self::getBasicSpells());
         // $instance->decks->populateSpellsDeckWith($spellsFor2PlayerGame);
-        //TODO: tymczasowo same immediate, póki się nimi zajmuję
+        //TODO: tymczasowo same immediate i 6 nieimmediate, póki się nimi zajmuję
         $extraCounter = 0;
         $allImmediateSpellsPlusSomeExtra = array_filter($spellsFor2PlayerGame, function ($spell) use (&$extraCounter) {
-            if (!$spell->immediate && $extraCounter < 6) {
+            if ($spell->spellActivation != SpellActivation::IMMEDIATE && $extraCounter < 6) {
                 $extraCounter++;
                 return true;
             }
-            return $spell->immediate;
+            return $spell->spellActivation == SpellActivation::IMMEDIATE;
         });
         $instance->decks->populateSpellsDeckWith($allImmediateSpellsPlusSomeExtra);
         $instance->decks->shuffleSpellsInTheDeck();
@@ -280,7 +281,7 @@ class ElementumGameLogic
             $spell = Elementum::get()->getSpellByNumber($spellPoolCardNumber);
             $playerBoard = $this->playerBoards[$playerId];
             $targetElement = $choice->getTargetElementForUniversalSpell() ?? $spell->element;
-            $playerBoard->putSpellOnBoardAtElement($spell, $targetElement);
+            $playerBoard->putSpellOnBoardAtElement($spell->number, $targetElement);
             $spellsPlayedPerPlayer[$playerId] = $spell->number;
             Crystals::decrementFor($playerId);
             Notifications::notifyPlayerPaidCrystalForUsingSpellPool($playerId, Players::getAllPlayersBesides($playerId));
@@ -306,7 +307,7 @@ class ElementumGameLogic
             $targetElement = $choice->getTargetElementForUniversalSpell() ?? $spell->element;
             $this->decks->playCardFromHand($spellNumber, $playerId);
             $playerBoard = $this->playerBoards[$playerId];
-            $playerBoard->putSpellOnBoardAtElement($spell, $targetElement);
+            $playerBoard->putSpellOnBoardAtElement($spellNumber, $targetElement);
             $spellsPlayedPerPlayer[$playerId] = $spell->number;
             Notifications::notifyPlayerPlayedSpellOnBoard($spell, $playerId, $targetElement);
         }
@@ -361,5 +362,25 @@ class ElementumGameLogic
     public function passSpells(array $spellPassingOrder)
     {
         $this->decks->passSpells($spellPassingOrder);
+    }
+
+    public function destroySpell(int $spellNumber, int $playerId)
+    {
+        $this->decks->discardSpell($spellNumber, $playerId);
+        $playerBoard = $this->playerBoards[$playerId];
+        $playerBoard->destroySpell($spellNumber);
+    }
+
+    public function addSpellFromPool(int $playerId, int $spellNumber)
+    {
+        $spell = Elementum::get()->getSpellByNumber($spellNumber);
+        $this->addSpellFromPoolAtElement($playerId, $spellNumber, $spell->element);
+    }
+
+    public function addSpellFromPoolAtElement(int $playerId, int $spellNumber, string $element)
+    {
+        $this->decks->addSpellFromPool($playerId, $spellNumber);
+        $playerBoard = $this->playerBoards[$playerId];
+        $playerBoard->putSpellOnBoardAtElement($spellNumber, $element);
     }
 }

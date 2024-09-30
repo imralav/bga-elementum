@@ -21,6 +21,7 @@ require_once(APP_GAMEMODULE_PATH . 'module/table/table.game.php');
 require_once('modules/php/ElementumGameLogic.php');
 require_once('modules/php/PlayerMoveChoices/PickedSpells.php');
 require_once('modules/php/PlayerMoveChoices/DraftChoices.php');
+require_once('modules/php/Spells/AddFromSpellPoolEffectHandler.php');
 
 use Elementum\Crystals;
 use Elementum\PlayerMoveChoices\DraftChoices;
@@ -29,7 +30,9 @@ use Elementum\Notifications;
 use Elementum\PlayerMoveChoices\PickedSpells;
 use \Bga\GameFramework\Actions\CheckAction;
 use Elementum\ImmediateEffectsResolution;
+use Elementum\SpellEffects\AddFromSpellPoolEffectHandler;
 use Elementum\Spells\Spell;
+use Elementum\Spells\SpellActivation;
 
 /**
  * TODO: fajne linki o typowaniu w PHP:
@@ -179,7 +182,7 @@ class Elementum extends Table
 
     public static function isImmediateSpell(int $spellNumber)
     {
-        return self::get()->allSpells[$spellNumber - 1]->immediate;
+        return self::get()->allSpells[$spellNumber - 1]->spellActivation == SpellActivation::IMMEDIATE;
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -279,6 +282,62 @@ class Elementum extends Table
     }
 
     //////////////////////////////////////////////////////////////////////////////
+    /////////// Actions for DestroyTarget effect
+    ///////////
+    function actSelectDestroyTarget(int $spellNumber, int $victimPlayerId)
+    {
+        $currentPlayerId = $this->getActivePlayerId();
+        $this->debug("Player $currentPlayerId selected a Spell to destroy. Spell number: $spellNumber, Victim Player id: $victimPlayerId");
+        $spell = self::getSpellByNumber($spellNumber);
+        $elementumGameLogic = ElementumGameLogic::restoreFromDB();
+        $elementumGameLogic->destroySpell($spellNumber, $victimPlayerId);
+        ImmediateEffectsResolution::spellResolvedFor($currentPlayerId);
+        Notifications::notifyPlayerDestroyedSpell($currentPlayerId, $spell, $victimPlayerId);
+        $this->gamestate->nextState('destroyTargetSelected');
+    }
+
+    //////////////////////////////////////////////////////////////////////////////
+    /////////// Actions for AddFromSpellPool effect
+    ///////////
+    function actSelectSpellFromSpellPool(int $spellNumber)
+    {
+        $activePlayerId = $this->getActivePlayerId();
+        $this->debug("Player $activePlayerId is adding a spell from the spell pool. Spell number: $spellNumber");
+        $elementumGameLogic = ElementumGameLogic::restoreFromDB();
+        $spell = self::getSpellByNumber($spellNumber);
+        if ($spell->isUniversalElement()) {
+            AddFromSpellPoolEffectHandler::rememberSelectedSpell($activePlayerId, $spellNumber);
+            ImmediateEffectsResolution::spellResolvedFor($activePlayerId);
+            $this->gamestate->nextState('universalSpellSelection');
+        } else {
+            $elementumGameLogic->addSpellFromPoolAtElement($activePlayerId, $spellNumber, $spell->element);
+            Notifications::notifyPlayerAddedSpellFromPool($activePlayerId, $spell);
+            ImmediateEffectsResolution::spellResolvedFor($activePlayerId);
+            $this->gamestate->nextState('spellPoolSpellSelected');
+        }
+    }
+
+    function actAddFromSpellPool_PickTargetElement(string $element)
+    {
+        $activePlayerId = $this->getActivePlayerId();
+        $elementumGameLogic = ElementumGameLogic::restoreFromDB();
+        $spellNumber = AddFromSpellPoolEffectHandler::getSelectedSpell($activePlayerId);
+        $spell = self::getSpellByNumber($spellNumber);
+        $elementumGameLogic->addSpellFromPoolAtElement($activePlayerId, $spellNumber, $element);
+        Notifications::notifyPlayerAddedSpellFromPool($activePlayerId, $spell);
+        ImmediateEffectsResolution::spellResolvedFor($activePlayerId);
+        AddFromSpellPoolEffectHandler::forgetSelectedSpell($activePlayerId);
+        $this->gamestate->nextState('spellPoolSpellSelected');
+    }
+
+    function actAddFromSpellPool_CancelDestinationChoice()
+    {
+        $currentPlayerId = $this->getCurrentPlayerId();
+        $this->debug("Player cancelled their destination choice. player id: $currentPlayerId");
+        $this->gamestate->nextState('cancel');
+    }
+
+    //////////////////////////////////////////////////////////////////////////////
     //////////// Game state arguments
     ////////////
 
@@ -331,9 +390,7 @@ class Elementum extends Table
         if ($resolver->noImmediateEffectsLeftToResolve()) {
             $this->gamestate->nextState('placingPowerCrystals');
         } else {
-            //TODO: implement as another set of private states
-            // $resolver->setupGameStatesToCollectNecessaryData();
-            $this->gamestate->nextState('checkRoundEnd');
+            $resolver->setupGameStateForNextImmediateEffect();
         }
     }
 

@@ -24,6 +24,7 @@ import { GameInfoPanel } from "./gui/GameInfoPanel";
 import { Element } from "./spells/elementum.types";
 import { UniversalElementDestinationChoiceState } from "./states/UniversalElementDestinationChoiceState";
 import { announce } from "./gui/Announcement";
+import { DestroyTargetSelectionState } from "./states/DestroyTargetSelectionState";
 
 /** The root for all of your game code. */
 export class Elementum extends CommonMixer(Gamegui) {
@@ -60,7 +61,10 @@ export class Elementum extends CommonMixer(Gamegui) {
       core: this,
     });
     this.gui.whenSpellOnHandClicked((spell) => {
-      this.getCurrentState().spellClicked(spell);
+      this.getCurrentState().spellOnHandClicked(spell);
+    });
+    this.gui.whenSpellOnBoardClicked((playerId, spell, element) => {
+      this.getCurrentState().spellOnBoardClicked(playerId, spell, element);
     });
     this.gui.whenSpellPoolClicked((spell) => {
       this.getCurrentState().spellOnSpellPoolClicked(spell);
@@ -70,13 +74,12 @@ export class Elementum extends CommonMixer(Gamegui) {
     });
     this.createStates();
     GameInfoPanel.updateCurrentRound(gamedatas.currentRound);
-    console.log("Announcement!!!!");
     announce("Current round: " + gamedatas.currentRound + "/3", 2000);
   }
 
   private getCurrentStateName() {
     return (
-      this.gamedatas.gamestate.private_state.name ||
+      this.gamedatas.gamestate.private_state?.name ||
       this.gamedatas.gamestate.name ||
       "noop"
     );
@@ -94,6 +97,7 @@ export class Elementum extends CommonMixer(Gamegui) {
       noop: new NoopState(),
       universalElementSpellDestination:
         new UniversalElementDestinationChoiceState(this.gui),
+      destroyTargetSelection: new DestroyTargetSelectionState(this.gui),
     };
   }
 
@@ -204,7 +208,13 @@ export class Elementum extends CommonMixer(Gamegui) {
     });
     onNotification("everyoneLostCrystal").do(() => {
       this.gui.crystals.moveCrystalFromAllPlayersToPile();
-    }
+    });
+    onNotification("playerDestroyedSpell").do((notification: Notif) => {
+      console.log("Spell destroyed", notification.args);
+      const victimPlayerId = notification.args!.victimPlayerId as PlayerId;
+      const spellNumber = notification.args!.spellNumber as Spell["number"];
+      this.gui.destroySpellOnBoard(victimPlayerId, spellNumber);
+    });
   }
 
   public performAction(action: keyof PlayerActions, args?: any): Promise<void> {

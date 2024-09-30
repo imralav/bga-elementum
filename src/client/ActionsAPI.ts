@@ -52,4 +52,18 @@ export class ActionsAPI {
         throw new Error("Error using element source");
       });
   }
+
+  public static async destroyTarget(
+    spellNumber: Spell["number"],
+    victimPlayerId: PlayerId
+  ): Promise<void> {
+    return Elementum.getInstance()
+      .performAction("actSelectDestroyTarget", {
+        spellNumber,
+        victimPlayerId,
+      })
+      .catch(() => {
+        throw new Error("Error destroying target");
+      });
+  }
 }

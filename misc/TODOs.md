@@ -34,12 +34,14 @@ $swdNamespaceAutoload = function ($class) {
 spl_autoload_register($swdNamespaceAutoload, true, true);
 ```
 
-# Ideas after studying Tisaac's Boilerplate
-
 # Checklist of spell effects
 
 In progress:
 
-- CrushCrystalsSpellEffect: frontend handling of the effect
+- AddSpellFromSpellPool: states, backend handling, frontend handling, remember not to invoke immediate effect for selected spell
 
 Done:
+
+- CrushCrystalsSpellEffect
+- TakeCrystalSpellEffect
+- DestroyCrystalSpellEffect
