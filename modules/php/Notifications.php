@@ -105,9 +105,20 @@ class Notifications
         Elementum::get()->notifyAllPlayers('playerDestroyedSpell', '${playerName} destroyed ${spellNumber}:${spellName} on ${victimName}\'s board', ['spellNumber' => $spell->number, 'playerId' => $playerId, 'playerName' => $playerName, 'victimName' => $victimName, 'spellName' => $spellName, 'victimPlayerId' => $victimPlayerId]);
     }
 
-    public static function notifyPlayerAddedSpellFromPool(int $playerId, Spell $spell)
+    public static function notifyPlayerAddedSpellFromPool(int $playerId, Spell $spell, string $element)
     {
         $playerName = Elementum::get()->getPlayerNameById($playerId);
-        Elementum::get()->notifyAllPlayers('playerAddedSpellFromPool', '${playerName} added ${spellNumber}:${spellName} from the Spell Pool to their board', ['spellNumber' => $spell->number, 'playerId' => $playerId, 'playerName' => $playerName, 'spellName' => $spell->name]);
+        Elementum::get()->notifyAllPlayers('playerAddedSpellFromPool', '${playerName} added ${spellNumber}:${spellName} from the Spell Pool to their board', ['spellNumber' => $spell->number, 'playerId' => $playerId, 'playerName' => $playerName, 'spellName' => $spell->name, 'element' => $element]);
+    }
+
+    public static function notifyPlayerAboutNoSpellsToCopy(int $playerId)
+    {
+        Elementum::get()->notifyPlayer($playerId, 'noSpellsToCopy', 'There are no spells to copy.', []);
+    }
+
+    public static function notifyPlayerSelectedSpellToCopy(int $playerId, Spell $spell)
+    {
+        $playerName = Elementum::get()->getPlayerNameById($playerId);
+        Elementum::get()->notifyAllPlayers('selectedSpellToCopy', '${playerName} selected spell ${spellNumber}:${spellName} to copy.', ['playerId' => $playerId, 'playerName' => $playerName, 'spellNumber' => $spell->number, 'spellName' => $spell->name]);
     }
 }

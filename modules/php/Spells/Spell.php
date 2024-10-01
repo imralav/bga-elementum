@@ -48,4 +48,9 @@ class Spell
     {
         return $this->element === Elements::UNIVERSAL;
     }
+
+    public function isImmediate()
+    {
+        return $this->spellActivation === SpellActivation::IMMEDIATE;
+    }
 }

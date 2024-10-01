@@ -299,7 +299,7 @@ class Elementum extends Table
     //////////////////////////////////////////////////////////////////////////////
     /////////// Actions for AddFromSpellPool effect
     ///////////
-    function actSelectSpellFromSpellPool(int $spellNumber)
+    function actAddFromSpellPool_SelectSpell(int $spellNumber)
     {
         $activePlayerId = $this->getActivePlayerId();
         $this->debug("Player $activePlayerId is adding a spell from the spell pool. Spell number: $spellNumber");
@@ -311,7 +311,7 @@ class Elementum extends Table
             $this->gamestate->nextState('universalSpellSelection');
         } else {
             $elementumGameLogic->addSpellFromPoolAtElement($activePlayerId, $spellNumber, $spell->element);
-            Notifications::notifyPlayerAddedSpellFromPool($activePlayerId, $spell);
+            Notifications::notifyPlayerAddedSpellFromPool($activePlayerId, $spell, $spell->element);
             ImmediateEffectsResolution::spellResolvedFor($activePlayerId);
             $this->gamestate->nextState('spellPoolSpellSelected');
         }
@@ -324,10 +324,10 @@ class Elementum extends Table
         $spellNumber = AddFromSpellPoolEffectHandler::getSelectedSpell($activePlayerId);
         $spell = self::getSpellByNumber($spellNumber);
         $elementumGameLogic->addSpellFromPoolAtElement($activePlayerId, $spellNumber, $element);
-        Notifications::notifyPlayerAddedSpellFromPool($activePlayerId, $spell);
+        Notifications::notifyPlayerAddedSpellFromPool($activePlayerId, $spell, $element);
         ImmediateEffectsResolution::spellResolvedFor($activePlayerId);
         AddFromSpellPoolEffectHandler::forgetSelectedSpell($activePlayerId);
-        $this->gamestate->nextState('spellPoolSpellSelected');
+        $this->gamestate->nextState('universalSpellDestination');
     }
 
     function actAddFromSpellPool_CancelDestinationChoice()
@@ -335,6 +335,24 @@ class Elementum extends Table
         $currentPlayerId = $this->getCurrentPlayerId();
         $this->debug("Player cancelled their destination choice. player id: $currentPlayerId");
         $this->gamestate->nextState('cancel');
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////
+    /////////// Actions for CopyImmediateSpell effect
+    ///////////
+    function actCopyImmediateSpell_selectSpell(int $spellNumber)
+    {
+        $activePlayerId = $this->getActivePlayerId();
+        $this->debug("Player $activePlayerId is copying an immediate spell. Spell number: $spellNumber");
+        $spell = self::getSpellByNumber($spellNumber);
+        if ($spell->isImmediate()) {
+            ImmediateEffectsResolution::spellResolvedFor($activePlayerId);
+            ImmediateEffectsResolution::addImmediateSpellToBeResolvedFirst($activePlayerId, $spellNumber);
+            Notifications::notifyPlayerSelectedSpellToCopy($activePlayerId, $spell);
+            $this->gamestate->nextState('spellCopied');
+        } else {
+            throw new BgaUserException("The selected spell is not an immediate spell");
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -375,6 +393,9 @@ class Elementum extends Table
         $spellsPlayedPerPlayerFromSpellPool = $logic->resolveAndPlaySpellPoolChoices();
         $spellsPlayedPerPlayerFromHand = $logic->playPickedSpells();
         $logic->clearPlayerChoices();
+        /**
+         * @var array<int, int> $allSpellsPlayedThisTurn
+         */
         $allSpellsPlayedThisTurn = $spellsPlayedPerPlayerFromSpellPool + $spellsPlayedPerPlayerFromHand;
         ImmediateEffectsResolution::rememberImmediateSpellsPlayedThisTurn($allSpellsPlayedThisTurn);
         //4. TODO: przejście do statusu ustawiania power crystals
@@ -415,6 +436,19 @@ class Elementum extends Table
             }
             $this->gamestate->nextState('nextDraft');
         }
+    }
+
+    function st_copyImmediateSpell_checkIfThereIsSpellToCopy()
+    {
+        $elementumGameLogic = ElementumGameLogic::restoreFromDB();
+        $this->debug("Checking if there are any immediate spells to copy");
+        if ($elementumGameLogic->areThereAnyImmediateSpellsOnPlayerBoardsOrSpellPool()) {
+            $this->debug("There are immediate spells to copy");
+            return;
+        }
+        Notifications::notifyPlayerAboutNoSpellsToCopy($this->getActivePlayerId());
+        ImmediateEffectsResolution::spellResolvedFor($this->getActivePlayerId());
+        $this->gamestate->nextState('noSpellToCopy');
     }
 
     private function getSpellPassingOrder()

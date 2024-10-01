@@ -248,7 +248,13 @@ export class ElementumGameInterface {
       });
   }
 
-  makeSpellsUnclickableOnAllBoards() {
+  makeSpellsClickableOnAllBoards() {
+    Object.values(this.playerBoards).forEach((playerBoard) => {
+      playerBoard.makeSpellsClickable();
+    });
+  }
+
+  makeSpellsNotClickableOnAllBoards() {
     Object.values(this.playerBoards).forEach((playerBoard) => {
       playerBoard.makeSpellsNotClickable();
     });

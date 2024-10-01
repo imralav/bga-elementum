@@ -58,6 +58,10 @@ declare global {
     actCancelDraftChoice: string;
     actPickTargetElement: string;
     actSelectDestroyTarget: string;
+    actAddFromSpellPool_SelectSpell: string;
+    actAddFromSpellPool_PickTargetElement: string;
+    actAddFromSpellPool_CancelDestinationChoice: string;
+    actCopyImmediateSpell_selectSpell: string;
   }
 
   type PlayerId = string;

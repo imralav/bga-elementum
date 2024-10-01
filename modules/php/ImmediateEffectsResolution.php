@@ -14,14 +14,14 @@ use Elementum\Crystals;
 class ImmediateEffectsResolution
 {
     /**
-     * @var array<int, int> $spellsPlayedThisTurn, maps Player ID to Spell Number
+     * @var array<int, int> $immediateSpellsToResolve, maps Player ID to Spell Number
      */
-    private array $spellsPlayedThisTurn;
+    private array $immediateSpellsToResolve;
 
     /**
      * Constant for the key used to store spells played this turn in globals
      */
-    private const SPELLS_PLAYED_THIS_TURN_KEY = 'spellsPlayedThisTurn';
+    private const IMMEDIATE_SPELLS_TO_RESOLVE_KEY = 'immediateSpellsToResolve';
 
     private const IMMEDIATE_EFFECTS_NOT_REQUIRING_PLAYER_INPUT = [
         TAKE_CRYSTAL_SPELL_EFFECT_TYPE,
@@ -29,27 +29,36 @@ class ImmediateEffectsResolution
     ];
 
     /**
-     * @param array<int, int> $spellsPlayedThisTurn, maps Player ID to Spell Number
+     * @param array<int, int> $immediateSpellsToResolve, maps Player ID to Spell Number
      */
-    public static function rememberImmediateSpellsPlayedThisTurn(array $spellsPlayedThisTurn)
+    public static function rememberImmediateSpellsPlayedThisTurn(array $immediateSpellsToResolve)
     {
-        $immediateSpellsPlayedThisTurn = array_filter($spellsPlayedThisTurn, function ($playerId) use ($spellsPlayedThisTurn) {
-            return Elementum::get()->isImmediateSpell($spellsPlayedThisTurn[$playerId]);
+        $immediateSpellsPlayedThisTurn = array_filter($immediateSpellsToResolve, function ($playerId) use ($immediateSpellsToResolve) {
+            return Elementum::get()->isImmediateSpell($immediateSpellsToResolve[$playerId]);
         }, ARRAY_FILTER_USE_KEY);
-        Elementum::get()->globals->set(self::SPELLS_PLAYED_THIS_TURN_KEY, $immediateSpellsPlayedThisTurn);
+        Elementum::get()->globals->set(self::IMMEDIATE_SPELLS_TO_RESOLVE_KEY, $immediateSpellsPlayedThisTurn);
     }
 
     public static function spellResolvedFor(int $playerId)
     {
-        Elementum::get()->debug("Spell resolved for player $playerId");
-        $immediateSpellsPlayedThisTurn = Elementum::get()->globals->get(self::SPELLS_PLAYED_THIS_TURN_KEY);
+        Elementum::get()->debug("====================Spell resolved for player $playerId");
+        $immediateSpellsPlayedThisTurn = Elementum::get()->globals->get(self::IMMEDIATE_SPELLS_TO_RESOLVE_KEY);
         unset($immediateSpellsPlayedThisTurn[$playerId]);
-        Elementum::get()->globals->set(self::SPELLS_PLAYED_THIS_TURN_KEY, $immediateSpellsPlayedThisTurn);
+        Elementum::get()->dump("====================immediateSpellsPlayedThisTurn to save", $immediateSpellsPlayedThisTurn);
+        Elementum::get()->globals->set(self::IMMEDIATE_SPELLS_TO_RESOLVE_KEY, $immediateSpellsPlayedThisTurn);
+    }
+
+    public static function addImmediateSpellToBeResolvedFirst(int $playerId, int $spellNumber)
+    {
+        $immediateSpellsPlayedThisTurn = Elementum::get()->globals->get(self::IMMEDIATE_SPELLS_TO_RESOLVE_KEY);
+        $newEntry = [$playerId => $spellNumber];
+        $immediateSpellsPlayedThisTurn = $newEntry + $immediateSpellsPlayedThisTurn;
+        Elementum::get()->globals->set(self::IMMEDIATE_SPELLS_TO_RESOLVE_KEY, $immediateSpellsPlayedThisTurn);
     }
 
     public function __construct()
     {
-        $this->spellsPlayedThisTurn = Elementum::get()->globals->get(self::SPELLS_PLAYED_THIS_TURN_KEY);
+        $this->immediateSpellsToResolve = Elementum::get()->globals->get(self::IMMEDIATE_SPELLS_TO_RESOLVE_KEY);
     }
 
     public static function loadResolver()
@@ -59,13 +68,15 @@ class ImmediateEffectsResolution
 
     public function noImmediateEffectsLeftToResolve()
     {
-        return empty($this->spellsPlayedThisTurn);
+        Elementum::get()->dump("===============are there no immediate effects left to resolve?", $this->immediateSpellsToResolve);
+        return empty($this->immediateSpellsToResolve);
     }
 
     public function resolveEffectsThatDontNeedPlayerInput()
     {
         $effectsRequiringInput = [];
-        foreach ($this->spellsPlayedThisTurn as $playerId => $spellNumber) {
+        Elementum::get()->dump("===============spells to look for dont need player input", $this->immediateSpellsToResolve);
+        foreach ($this->immediateSpellsToResolve as $playerId => $spellNumber) {
             $spell = Elementum::get()->getSpellByNumber($spellNumber);
             $effect = $spell->effect;
             if ($this->effectDoesNotRequirePlayerInput($effect->type)) {
@@ -74,7 +85,8 @@ class ImmediateEffectsResolution
                 $effectsRequiringInput[$playerId] = $spellNumber;
             }
         }
-        $this->spellsPlayedThisTurn = $effectsRequiringInput;
+        $this->immediateSpellsToResolve = $effectsRequiringInput;
+        Elementum::get()->dump("===============spells left to resolve", $this->immediateSpellsToResolve);
     }
 
     private function effectDoesNotRequirePlayerInput(string $effectType)
@@ -86,11 +98,13 @@ class ImmediateEffectsResolution
     {
         if ($effectType === TAKE_CRYSTAL_SPELL_EFFECT_TYPE) {
             Crystals::incrementFor($playerId);
+            self::spellResolvedFor($playerId);
             Notifications::notifyPlayerTookCrystal($playerId);
         } else if ($effectType === CRUSH_CRYSTALS_SPELL_EFFECT_TYPE) {
             $allPlayers = Elementum::get()->loadPlayersBasicInfos();
             $allPlayerIds = array_keys($allPlayers);
             Crystals::decrementMany($allPlayerIds);
+            self::spellResolvedFor($playerId);
             Notifications::notifyEveryoneLostCrystal();
         }
     }
@@ -100,8 +114,8 @@ class ImmediateEffectsResolution
      */
     public function setupGameStateForNextImmediateEffect()
     {
-        $nextPlayerId = array_key_first($this->spellsPlayedThisTurn);
-        $spellNumber = $this->spellsPlayedThisTurn[$nextPlayerId];
+        $nextPlayerId = array_key_first($this->immediateSpellsToResolve);
+        $spellNumber = $this->immediateSpellsToResolve[$nextPlayerId];
         $spell = Elementum::get()->getSpellByNumber($spellNumber);
         $effect = $spell->effect;
         $elementum = Elementum::get();
@@ -113,6 +127,10 @@ class ImmediateEffectsResolution
             case ADD_FROM_SPELL_POOL_SPELL_EFFECT_TYPE:
                 $elementum->gamestate->changeActivePlayer($nextPlayerId);
                 $elementum->gamestate->nextState('addFromSpellPool');
+                break;
+            case COPY_IMMEDIATE_SPELL_SPELL_EFFECT_TYPE:
+                $elementum->gamestate->changeActivePlayer($nextPlayerId);
+                $elementum->gamestate->nextState('copyImmediateSpell');
                 break;
             default:
                 $elementum->gamestate->nextState('placingPowerCrystals');

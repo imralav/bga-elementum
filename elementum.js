@@ -958,7 +958,12 @@ define("src/client/gui/ElementumGameInterface", ["require", "exports", "src/clie
                 _this.playerBoards[playerId].makeSpellsClickable();
             });
         };
-        ElementumGameInterface.prototype.makeSpellsUnclickableOnAllBoards = function () {
+        ElementumGameInterface.prototype.makeSpellsClickableOnAllBoards = function () {
+            Object.values(this.playerBoards).forEach(function (playerBoard) {
+                playerBoard.makeSpellsClickable();
+            });
+        };
+        ElementumGameInterface.prototype.makeSpellsNotClickableOnAllBoards = function () {
             Object.values(this.playerBoards).forEach(function (playerBoard) {
                 playerBoard.makeSpellsNotClickable();
             });
@@ -1079,6 +1084,54 @@ define("src/client/ActionsAPI", ["require", "exports", "bgagame/elementum"], fun
                         })
                             .catch(function () {
                             throw new Error("Error destroying target");
+                        })];
+                });
+            });
+        };
+        ActionsAPI.actAddFromSpellPool_SelectSpell = function (spellNumber) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2, elementum_2.Elementum.getInstance()
+                            .performAction("actAddFromSpellPool_SelectSpell", {
+                            spellNumber: spellNumber,
+                        })
+                            .catch(function () {
+                            throw new Error("Error using spell pool");
+                        })];
+                });
+            });
+        };
+        ActionsAPI.actAddFromSpellPool_PickTargetElement = function (element) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2, elementum_2.Elementum.getInstance()
+                            .performAction("actAddFromSpellPool_PickTargetElement", { element: element })
+                            .catch(function () {
+                            throw new Error("Error using element source");
+                        })];
+                });
+            });
+        };
+        ActionsAPI.actAddFromSpellPool_CancelDestinationChoice = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2, elementum_2.Elementum.getInstance()
+                            .performPossibleAction("actAddFromSpellPool_CancelDestinationChoice")
+                            .catch(function () {
+                            throw new Error("Error cancelling draft choice");
+                        })];
+                });
+            });
+        };
+        ActionsAPI.actCopyImmediateSpell_selectSpell = function (spellNumber) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2, elementum_2.Elementum.getInstance()
+                            .performAction("actCopyImmediateSpell_selectSpell", {
+                            spellNumber: spellNumber,
+                        })
+                            .catch(function () {
+                            throw new Error("Error copying immediate spell");
                         })];
                 });
             });
@@ -1273,13 +1326,115 @@ define("src/client/states/DestroyTargetSelectionState", ["require", "exports", "
             });
         };
         DestroyTargetSelectionState.prototype.onLeave = function () {
-            this.gui.makeSpellsUnclickableOnAllBoards();
+            this.gui.makeSpellsNotClickableOnAllBoards();
         };
         return DestroyTargetSelectionState;
     }(NoopState_5.NoopState));
     exports.DestroyTargetSelectionState = DestroyTargetSelectionState;
 });
-define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook/common", "src/client/gui/ElementumGameInterface", "src/client/states/NoopState", "src/client/states/PickSpellState", "src/client/states/SpellDestinationChoiceState", "src/client/common/Templates", "src/client/Notifications", "src/client/states/PlayersDraftState", "src/client/gui/GameInfoPanel", "src/client/states/UniversalElementDestinationChoiceState", "src/client/gui/Announcement", "src/client/states/DestroyTargetSelectionState"], function (require, exports, Gamegui, CommonMixer, ElementumGameInterface_1, NoopState_6, PickSpellState_1, SpellDestinationChoiceState_1, Templates_6, Notifications_1, PlayersDraftState_1, GameInfoPanel_2, UniversalElementDestinationChoiceState_1, Announcement_1, DestroyTargetSelectionState_1) {
+define("src/client/states/AddFromSpellPoolSpellSelectionState", ["require", "exports", "src/client/ActionsAPI", "src/client/states/NoopState"], function (require, exports, ActionsAPI_6, NoopState_6) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.AddFromSpellPoolSpellSelectionState = void 0;
+    var AddFromSpellPoolSpellSelectionState = (function (_super) {
+        __extends(AddFromSpellPoolSpellSelectionState, _super);
+        function AddFromSpellPoolSpellSelectionState() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        AddFromSpellPoolSpellSelectionState.prototype.spellOnSpellPoolClicked = function (spell) {
+            console.log("Spell pool clicked", spell);
+            ActionsAPI_6.ActionsAPI.actAddFromSpellPool_SelectSpell(spell.number)
+                .then(function () {
+                console.log("Picking spell on pool", spell.number);
+            })
+                .catch(function (error) {
+                console.error("Error picking spell pool", error);
+            });
+        };
+        return AddFromSpellPoolSpellSelectionState;
+    }(NoopState_6.NoopState));
+    exports.AddFromSpellPoolSpellSelectionState = AddFromSpellPoolSpellSelectionState;
+});
+define("src/client/states/AddFromSpellPoolUniversalElementSpellDestinationState", ["require", "exports", "src/client/ActionsAPI", "src/client/states/NoopState"], function (require, exports, ActionsAPI_7, NoopState_7) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.AddFromSpellPoolUniversalElementSpellDestinationState = void 0;
+    var AddFromSpellPoolUniversalElementSpellDestinationState = (function (_super) {
+        __extends(AddFromSpellPoolUniversalElementSpellDestinationState, _super);
+        function AddFromSpellPoolUniversalElementSpellDestinationState(gui, elementum) {
+            var _this = _super.call(this) || this;
+            _this.gui = gui;
+            _this.elementum = elementum;
+            return _this;
+        }
+        AddFromSpellPoolUniversalElementSpellDestinationState.prototype.onEnter = function () {
+            this.gui.makeElementSourcesClickableForCurrentPlayer();
+        };
+        AddFromSpellPoolUniversalElementSpellDestinationState.prototype.onLeave = function () {
+            this.gui.makeElementSourcesNotClickableForCurrentPlayer();
+        };
+        AddFromSpellPoolUniversalElementSpellDestinationState.prototype.onUpdateActionButtons = function (args) {
+            var _this = this;
+            this.elementum.addCancelButton(_("Cancel"), function () {
+                return ActionsAPI_7.ActionsAPI.actAddFromSpellPool_CancelDestinationChoice().then(function () {
+                    _this.gui.unpickSpellOnSpellPool();
+                });
+            });
+        };
+        AddFromSpellPoolUniversalElementSpellDestinationState.prototype.elementSourceClicked = function (playerId, element) {
+            console.log("Element source clicked", element);
+            ActionsAPI_7.ActionsAPI.actAddFromSpellPool_PickTargetElement(element)
+                .then(function () {
+                console.log("Picking element source", element);
+            })
+                .catch(function (error) {
+                console.error("Error picking element source", error);
+            });
+        };
+        return AddFromSpellPoolUniversalElementSpellDestinationState;
+    }(NoopState_7.NoopState));
+    exports.AddFromSpellPoolUniversalElementSpellDestinationState = AddFromSpellPoolUniversalElementSpellDestinationState;
+});
+define("src/client/states/CopyImmediateSpellSelectionState", ["require", "exports", "src/client/ActionsAPI", "src/client/states/NoopState"], function (require, exports, ActionsAPI_8, NoopState_8) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.CopyImmediateSpellSelectionState = void 0;
+    var CopyImmediateSpellSelectionState = (function (_super) {
+        __extends(CopyImmediateSpellSelectionState, _super);
+        function CopyImmediateSpellSelectionState(gui) {
+            var _this = _super.call(this) || this;
+            _this.gui = gui;
+            return _this;
+        }
+        CopyImmediateSpellSelectionState.prototype.onEnter = function () {
+            this.gui.makeSpellsClickableOnAllBoards();
+        };
+        CopyImmediateSpellSelectionState.prototype.spellOnBoardClicked = function (playerId, spell, element) {
+            ActionsAPI_8.ActionsAPI.actCopyImmediateSpell_selectSpell(spell.number)
+                .then(function () {
+                console.log("Selected spell", spell);
+            })
+                .catch(function (error) {
+                console.error("Error selecting spell", error);
+            });
+        };
+        CopyImmediateSpellSelectionState.prototype.spellOnSpellPoolClicked = function (spell) {
+            ActionsAPI_8.ActionsAPI.actCopyImmediateSpell_selectSpell(spell.number)
+                .then(function () {
+                console.log("Selected spell", spell);
+            })
+                .catch(function (error) {
+                console.error("Error selecting spell", error);
+            });
+        };
+        CopyImmediateSpellSelectionState.prototype.onLeave = function () {
+            this.gui.makeSpellsNotClickableOnAllBoards();
+        };
+        return CopyImmediateSpellSelectionState;
+    }(NoopState_8.NoopState));
+    exports.CopyImmediateSpellSelectionState = CopyImmediateSpellSelectionState;
+});
+define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook/common", "src/client/gui/ElementumGameInterface", "src/client/states/NoopState", "src/client/states/PickSpellState", "src/client/states/SpellDestinationChoiceState", "src/client/common/Templates", "src/client/Notifications", "src/client/states/PlayersDraftState", "src/client/gui/GameInfoPanel", "src/client/states/UniversalElementDestinationChoiceState", "src/client/gui/Announcement", "src/client/states/DestroyTargetSelectionState", "src/client/states/AddFromSpellPoolSpellSelectionState", "src/client/states/AddFromSpellPoolUniversalElementSpellDestinationState", "src/client/states/CopyImmediateSpellSelectionState"], function (require, exports, Gamegui, CommonMixer, ElementumGameInterface_1, NoopState_9, PickSpellState_1, SpellDestinationChoiceState_1, Templates_6, Notifications_1, PlayersDraftState_1, GameInfoPanel_2, UniversalElementDestinationChoiceState_1, Announcement_1, DestroyTargetSelectionState_1, AddFromSpellPoolSpellSelectionState_1, AddFromSpellPoolUniversalElementSpellDestinationState_1, CopyImmediateSpellSelectionState_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Elementum = void 0;
@@ -1340,9 +1495,12 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
                 spellChoice: new PickSpellState_1.PickSpellState(this.gui),
                 spellDestinationChoice: new SpellDestinationChoiceState_1.SpellDestinationChoiceState(this, this.gui),
                 playersDraft: new PlayersDraftState_1.PlayersDraftState(this, this.gui),
-                noop: new NoopState_6.NoopState(),
+                noop: new NoopState_9.NoopState(),
                 universalElementSpellDestination: new UniversalElementDestinationChoiceState_1.UniversalElementDestinationChoiceState(this.gui),
                 destroyTargetSelection: new DestroyTargetSelectionState_1.DestroyTargetSelectionState(this.gui),
+                addFromSpellPool_spellSelection: new AddFromSpellPoolSpellSelectionState_1.AddFromSpellPoolSpellSelectionState(),
+                addFromSpellPool_universalElementSpellDestination: new AddFromSpellPoolUniversalElementSpellDestinationState_1.AddFromSpellPoolUniversalElementSpellDestinationState(this.gui, this),
+                copyImmediateSpell_spellSelection: new CopyImmediateSpellSelectionState_1.CopyImmediateSpellSelectionState(this.gui),
             };
         };
         Elementum.prototype.getStateByName = function (stateName) {
@@ -1418,6 +1576,14 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
                 var victimPlayerId = notification.args.victimPlayerId;
                 var spellNumber = notification.args.spellNumber;
                 _this.gui.destroySpellOnBoard(victimPlayerId, spellNumber);
+            });
+            (0, Notifications_1.onNotification)("playerAddedSpellFromPool").do(function (notification) {
+                console.log("Spell added from spell pool", notification.args);
+                var playerId = notification.args.playerId;
+                var spellNumber = notification.args.spellNumber;
+                var element = notification.args.element;
+                var spell = _this.getSpellByNumber(spellNumber);
+                _this.gui.putSpellOnBoard(playerId, spell, element);
             });
         };
         Elementum.prototype.performAction = function (action, args) {

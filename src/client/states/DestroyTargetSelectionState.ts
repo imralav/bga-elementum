@@ -24,6 +24,6 @@ export class DestroyTargetSelectionState extends NoopState {
   }
 
   onLeave(): void {
-    this.gui.makeSpellsUnclickableOnAllBoards();
+    this.gui.makeSpellsNotClickableOnAllBoards();
   }
 }

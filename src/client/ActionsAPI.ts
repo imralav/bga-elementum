@@ -66,4 +66,46 @@ export class ActionsAPI {
         throw new Error("Error destroying target");
       });
   }
+
+  public static async actAddFromSpellPool_SelectSpell(
+    spellNumber: Spell["number"]
+  ): Promise<void> {
+    return Elementum.getInstance()
+      .performAction("actAddFromSpellPool_SelectSpell", {
+        spellNumber,
+      })
+      .catch(() => {
+        throw new Error("Error using spell pool");
+      });
+  }
+
+  public static async actAddFromSpellPool_PickTargetElement(
+    element: Element
+  ): Promise<void> {
+    return Elementum.getInstance()
+      .performAction("actAddFromSpellPool_PickTargetElement", { element })
+      .catch(() => {
+        throw new Error("Error using element source");
+      });
+  }
+
+  public static async actAddFromSpellPool_CancelDestinationChoice(): Promise<void> {
+    return Elementum.getInstance()
+      .performPossibleAction("actAddFromSpellPool_CancelDestinationChoice")
+      .catch(() => {
+        throw new Error("Error cancelling draft choice");
+      });
+  }
+
+  public static async actCopyImmediateSpell_selectSpell(
+    spellNumber: Spell["number"]
+  ): Promise<void> {
+    return Elementum.getInstance()
+      .performAction("actCopyImmediateSpell_selectSpell", {
+        spellNumber,
+      })
+      .catch(() => {
+        throw new Error("Error copying immediate spell");
+      });
+  }
 }

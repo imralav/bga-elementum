@@ -25,6 +25,9 @@ import { Element } from "./spells/elementum.types";
 import { UniversalElementDestinationChoiceState } from "./states/UniversalElementDestinationChoiceState";
 import { announce } from "./gui/Announcement";
 import { DestroyTargetSelectionState } from "./states/DestroyTargetSelectionState";
+import { AddFromSpellPoolSpellSelectionState } from "./states/AddFromSpellPoolSpellSelectionState";
+import { AddFromSpellPoolUniversalElementSpellDestinationState } from "./states/AddFromSpellPoolUniversalElementSpellDestinationState";
+import { CopyImmediateSpellSelectionState } from "./states/CopyImmediateSpellSelectionState";
 
 /** The root for all of your game code. */
 export class Elementum extends CommonMixer(Gamegui) {
@@ -98,6 +101,16 @@ export class Elementum extends CommonMixer(Gamegui) {
       universalElementSpellDestination:
         new UniversalElementDestinationChoiceState(this.gui),
       destroyTargetSelection: new DestroyTargetSelectionState(this.gui),
+      addFromSpellPool_spellSelection:
+        new AddFromSpellPoolSpellSelectionState(),
+      addFromSpellPool_universalElementSpellDestination:
+        new AddFromSpellPoolUniversalElementSpellDestinationState(
+          this.gui,
+          this
+        ),
+      copyImmediateSpell_spellSelection: new CopyImmediateSpellSelectionState(
+        this.gui
+      ),
     };
   }
 
@@ -214,6 +227,14 @@ export class Elementum extends CommonMixer(Gamegui) {
       const victimPlayerId = notification.args!.victimPlayerId as PlayerId;
       const spellNumber = notification.args!.spellNumber as Spell["number"];
       this.gui.destroySpellOnBoard(victimPlayerId, spellNumber);
+    });
+    onNotification("playerAddedSpellFromPool").do((notification: Notif) => {
+      console.log("Spell added from spell pool", notification.args);
+      const playerId = notification.args!.playerId as PlayerId;
+      const spellNumber = notification.args!.spellNumber as Spell["number"];
+      const element = notification.args!.element as Element;
+      const spell = this.getSpellByNumber(spellNumber);
+      this.gui.putSpellOnBoard(playerId, spell!, element);
     });
   }
 

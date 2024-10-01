@@ -162,4 +162,10 @@ class Decks
         $card = $this->findCardInSpellPool($spellNumber);
         $this->cards->moveCard($card['id'], 'board', $playerId);
     }
+
+    public function getAllSpellsOnAllPlayerBoards()
+    {
+        $cards = $this->cards->getCardsInLocation('board');
+        return $this->mapCardsToSpells($cards);
+    }
 }

@@ -66,11 +66,11 @@ class ElementumGameLogic
         //TODO: tymczasowo same immediate i 6 nieimmediate, póki się nimi zajmuję
         $extraCounter = 0;
         $allImmediateSpellsPlusSomeExtra = array_filter($spellsFor2PlayerGame, function ($spell) use (&$extraCounter) {
-            if ($spell->spellActivation != SpellActivation::IMMEDIATE && $extraCounter < 6) {
+            if (!$spell->spellActivation->isImmediate() && $extraCounter < 6) {
                 $extraCounter++;
                 return true;
             }
-            return $spell->spellActivation == SpellActivation::IMMEDIATE;
+            return $spell->isImmediate();
         });
         $instance->decks->populateSpellsDeckWith($allImmediateSpellsPlusSomeExtra);
         $instance->decks->shuffleSpellsInTheDeck();
@@ -382,5 +382,16 @@ class ElementumGameLogic
         $this->decks->addSpellFromPool($playerId, $spellNumber);
         $playerBoard = $this->playerBoards[$playerId];
         $playerBoard->putSpellOnBoardAtElement($spellNumber, $element);
+    }
+
+    public function areThereAnyImmediateSpellsOnPlayerBoardsOrSpellPool()
+    {
+        $immediateSpellsInSpellPool = array_filter($this->decks->getSpellPool(), function ($spell) {
+            return $spell->isImmediate();
+        });
+        $immediateSpellsInPlayerBoards = array_filter($this->decks->getAllSpellsOnAllPlayerBoards(), function ($spell) {
+            return $spell->isImmediate();
+        });
+        return count($immediateSpellsInSpellPool) > 0 || count($immediateSpellsInPlayerBoards) > 0;
     }
 }
