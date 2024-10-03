@@ -21,7 +21,8 @@ require_once(APP_GAMEMODULE_PATH . 'module/table/table.game.php');
 require_once('modules/php/ElementumGameLogic.php');
 require_once('modules/php/PlayerMoveChoices/PickedSpells.php');
 require_once('modules/php/PlayerMoveChoices/DraftChoices.php');
-require_once('modules/php/Spells/AddFromSpellPoolEffectHandler.php');
+require_once('modules/php/Spells/AddFromSpellPoolEffectContext.php');
+require_once('modules/php/Spells/ExchangeWithSpellPoolEffectContext.php');
 
 use Elementum\Crystals;
 use Elementum\PlayerMoveChoices\DraftChoices;
@@ -30,7 +31,8 @@ use Elementum\Notifications;
 use Elementum\PlayerMoveChoices\PickedSpells;
 use \Bga\GameFramework\Actions\CheckAction;
 use Elementum\ImmediateEffectsResolution;
-use Elementum\SpellEffects\AddFromSpellPoolEffectHandler;
+use Elementum\SpellEffects\AddFromSpellPoolEffectContext;
+use Elementum\SpellEffects\ExchangeWithSpellPoolEffectContext;
 use Elementum\Spells\Spell;
 use Elementum\Spells\SpellActivation;
 
@@ -306,7 +308,7 @@ class Elementum extends Table
         $elementumGameLogic = ElementumGameLogic::restoreFromDB();
         $spell = self::getSpellByNumber($spellNumber);
         if ($spell->isUniversalElement()) {
-            AddFromSpellPoolEffectHandler::rememberSelectedSpell($activePlayerId, $spellNumber);
+            AddFromSpellPoolEffectContext::rememberSelectedSpell($activePlayerId, $spellNumber);
             ImmediateEffectsResolution::spellResolvedFor($activePlayerId);
             $this->gamestate->nextState('universalSpellSelection');
         } else {
@@ -321,12 +323,12 @@ class Elementum extends Table
     {
         $activePlayerId = $this->getActivePlayerId();
         $elementumGameLogic = ElementumGameLogic::restoreFromDB();
-        $spellNumber = AddFromSpellPoolEffectHandler::getSelectedSpell($activePlayerId);
+        $spellNumber = AddFromSpellPoolEffectContext::getSelectedSpell($activePlayerId);
         $spell = self::getSpellByNumber($spellNumber);
         $elementumGameLogic->addSpellFromPoolAtElement($activePlayerId, $spellNumber, $element);
         Notifications::notifyPlayerAddedSpellFromPool($activePlayerId, $spell, $element);
         ImmediateEffectsResolution::spellResolvedFor($activePlayerId);
-        AddFromSpellPoolEffectHandler::forgetSelectedSpell($activePlayerId);
+        AddFromSpellPoolEffectContext::forgetSelectedSpell($activePlayerId);
         $this->gamestate->nextState('universalSpellDestination');
     }
 
@@ -353,6 +355,65 @@ class Elementum extends Table
         } else {
             throw new BgaUserException("The selected spell is not an immediate spell");
         }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////
+    /////////// Actions for ExchangeWithSpellPool effect
+    ///////////
+    function actExchangeWithSpellPool_SelectSpellOnBoard(int $spellNumber)
+    {
+        $activePlayerId = $this->getActivePlayerId();
+        $this->debug("Player $activePlayerId is exchanging a spell with the spell pool. Spell number: $spellNumber");
+        ExchangeWithSpellPoolEffectContext::rememberSelectedSpellOnBoard($activePlayerId, $spellNumber);
+        $this->gamestate->nextState('spellOnBoardSelected');
+    }
+
+    function actExchangeWithSpellPool_SelectSpellFromPool(int $spellNumberFromPool)
+    {
+        $activePlayerId = $this->getActivePlayerId();
+        $elementumGameLogic = ElementumGameLogic::restoreFromDB();
+        $spellFromPool = self::getSpellByNumber($spellNumberFromPool);
+        if ($spellFromPool->isUniversalElement()) {
+            ExchangeWithSpellPoolEffectContext::rememberSelectedSpellFromPool($activePlayerId, $spellNumberFromPool);
+            $this->gamestate->nextState('universalSpellDestination');
+        } else {
+            $spellNumberOnBoard = ExchangeWithSpellPoolEffectContext::getSelectedSpellOnBoard($activePlayerId);
+            $spellOnBoard = self::getSpellByNumber($spellNumberOnBoard);
+            $elementumGameLogic->exchangeSpellWithPoolAtElement($activePlayerId, $spellOnBoard, $spellFromPool, $spellFromPool->element);
+            Notifications::notifyPlayerExchangedSpellWithPool($activePlayerId, $spellOnBoard, $spellFromPool, $spellFromPool->element);
+            ImmediateEffectsResolution::spellResolvedFor($activePlayerId);
+            ExchangeWithSpellPoolEffectContext::forgetSelectedSpells($activePlayerId);
+            $this->gamestate->nextState('spellsExchanged');
+        }
+    }
+
+    function actExchangeWithSpellPool_CancelSpellOnBoardChoice()
+    {
+        $currentPlayerId = $this->getCurrentPlayerId();
+        $this->debug("Player cancelled their spell pool exchange. player id: $currentPlayerId");
+        $this->gamestate->nextState('cancel');
+    }
+
+    function actExchangeWithSpellPool_PickTargetElement(string $element)
+    {
+        $activePlayerId = $this->getActivePlayerId();
+        $elementumGameLogic = ElementumGameLogic::restoreFromDB();
+        $spellNumberFromPool = ExchangeWithSpellPoolEffectContext::getSelectedSpellFromPool($activePlayerId);
+        $spellNumberOnBoard = ExchangeWithSpellPoolEffectContext::getSelectedSpellOnBoard($activePlayerId);
+        $spellFromPool = self::getSpellByNumber($spellNumberFromPool);
+        $spellOnBoard = self::getSpellByNumber($spellNumberOnBoard);
+        $elementumGameLogic->exchangeSpellWithPoolAtElement($activePlayerId, $spellOnBoard, $spellFromPool, $element);
+        Notifications::notifyPlayerExchangedSpellWithPool($activePlayerId, $spellOnBoard, $spellFromPool, $element);
+        ImmediateEffectsResolution::spellResolvedFor($activePlayerId);
+        ExchangeWithSpellPoolEffectContext::forgetSelectedSpells($activePlayerId);
+        $this->gamestate->nextState('spellsExchanged');
+    }
+
+    function actExchangeWithSpellPool_CancelElementDestinationChoice()
+    {
+        $activePlayerId = $this->getActivePlayerId();
+        $this->debug("Player cancelled their element destination choice. player id: $activePlayerId");
+        $this->gamestate->nextState('cancel');
     }
 
     //////////////////////////////////////////////////////////////////////////////

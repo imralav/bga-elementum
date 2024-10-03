@@ -132,6 +132,10 @@ class ImmediateEffectsResolution
                 $elementum->gamestate->changeActivePlayer($nextPlayerId);
                 $elementum->gamestate->nextState('copyImmediateSpell');
                 break;
+            case EXCHANGE_WITH_SPELL_POOL_SPELL_EFFECT_TYPE:
+                $elementum->gamestate->changeActivePlayer($nextPlayerId);
+                $elementum->gamestate->nextState('exchangeWithSpellPool');
+                break;
             default:
                 $elementum->gamestate->nextState('placingPowerCrystals');
                 break;

@@ -118,7 +118,7 @@ $machinestates = array(
         "description" => "Resolving immediate effects of spells",
         "type" => "game",
         "action" => "st_immediateEffectsResolution",
-        "transitions" => ['placingPowerCrystals' => 6, 'destroyTargetSelection' => 51, 'addFromSpellPool' => 52, 'copyImmediateSpell' => 54]
+        "transitions" => ['placingPowerCrystals' => 6, 'destroyTargetSelection' => 51, 'addFromSpellPool' => 52, 'copyImmediateSpell' => 54, 'exchangeWithSpellPool' => 55]
     ),
 
     //////////////////////////////////////////////////////////////////////////////
@@ -168,6 +168,37 @@ $machinestates = array(
         "transitions" => ['spellCopied' => 5, 'noSpellToCopy' => 5]
     ),
 
+    ///////////////////////////////////////////////////////////////////////////////
+    /////////// immediate effect: exchange with spell pool
+    ///////////
+    55 => array(
+        "name" => "exchangeWithSpellPool_spellOnBoardSelection",
+        "description" => clienttranslate('${actplayer} is selecting a Spell to exchange with the Spell Pool'),
+        "descriptionmyturn" => clienttranslate('${you} must select a Spell to exchange with the Spell Pool'),
+        "type" => "activeplayer",
+        "possibleactions" => ["actExchangeWithSpellPool_SelectSpellOnBoard"],
+        "transitions" => ['spellOnBoardSelected' => 56]
+    ),
+
+    56 => array(
+        "name" => "exchangeWithSpellPool_spellFromSpellPoolSelection",
+        "description" => clienttranslate('${actplayer} is selecting a Spell from Spell Pool'),
+        "descriptionmyturn" => clienttranslate('${you} must select a Spell from Spell Pool'),
+        "type" => "activeplayer",
+        "possibleactions" => ["actExchangeWithSpellPool_SelectSpellFromPool", "actExchangeWithSpellPool_CancelSpellOnBoardChoice"],
+        "transitions" => ['spellsExchanged' => 5, 'universalSpellDestination' => 57, 'cancel' => 55]
+    ),
+
+    57 => array(
+        "name" => "exchangeWithSpellPool_universalElementSpellDestination",
+        "description" => clienttranslate('${actplayer} is selecting where to put Universal Spell'),
+        "descriptionmyturn" => clienttranslate('${you} must select where to put Universal Spell'),
+        "type" => "activeplayer",
+        "possibleactions" => ["actExchangeWithSpellPool_PickTargetElement", "actExchangeWithSpellPool_CancelElementDestinationChoice"],
+        "transitions" => ['spellsExchanged' => 5, 'cancel' => 56]
+    ),
+
+    //////////////////////////////////////////////////////////////////////////////
     6 => array(
         "name" => "placingPowerCrystals",
         "description" => "Placing power crystals on players boards",

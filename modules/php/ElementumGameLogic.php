@@ -19,6 +19,7 @@ use Elementum\PlayerMoveChoices\PickedSpells;
 use Elementum\PlayerMoveChoices\SpellPoolChoiceResolver;
 use Elementum\PlayerMoveChoices\SpellPoolChoiceResolverInput;
 use Elementum\Players;
+use Elementum\Spells\Spell;
 use Elementum\Spells\SpellActivation;
 
 class ElementumGameLogic
@@ -66,7 +67,7 @@ class ElementumGameLogic
         //TODO: tymczasowo same immediate i 6 nieimmediate, póki się nimi zajmuję
         $extraCounter = 0;
         $allImmediateSpellsPlusSomeExtra = array_filter($spellsFor2PlayerGame, function ($spell) use (&$extraCounter) {
-            if (!$spell->spellActivation->isImmediate() && $extraCounter < 6) {
+            if (!$spell->isImmediate() && $extraCounter < 6) {
                 $extraCounter++;
                 return true;
             }
@@ -277,7 +278,7 @@ class ElementumGameLogic
             $playerId = $choice->getPlayerId();
             $pickedSpell = PickedSpells::getPickedSpellOf($playerId);
             $spellPoolCardNumber = $choice->getSpellPoolCardNumber();
-            $this->decks->replaceCardInSpellPoolAndPlayerBoard($pickedSpell, $spellPoolCardNumber, $playerId);
+            $this->decks->playCardFromSpellPool($pickedSpell, $spellPoolCardNumber, $playerId);
             $spell = Elementum::get()->getSpellByNumber($spellPoolCardNumber);
             $playerBoard = $this->playerBoards[$playerId];
             $targetElement = $choice->getTargetElementForUniversalSpell() ?? $spell->element;
@@ -368,7 +369,7 @@ class ElementumGameLogic
     {
         $this->decks->discardSpell($spellNumber, $playerId);
         $playerBoard = $this->playerBoards[$playerId];
-        $playerBoard->destroySpell($spellNumber);
+        $playerBoard->removeSpell($spellNumber);
     }
 
     public function addSpellFromPool(int $playerId, int $spellNumber)
@@ -393,5 +394,14 @@ class ElementumGameLogic
             return $spell->isImmediate();
         });
         return count($immediateSpellsInSpellPool) > 0 || count($immediateSpellsInPlayerBoards) > 0;
+    }
+
+    public function exchangeSpellWithPoolAtElement(int $playerId, Spell $spellOnBoard, Spell $spellFromPool, string $element)
+    {
+        $this->decks->swapCardsBetweenPlayerBoardAndSpellPool($spellOnBoard->number, $spellFromPool->number, $playerId);
+        $playerBoard = $this->playerBoards[$playerId];
+        $playerBoard->removeSpell($spellOnBoard->number);
+        $playerBoard->putSpellOnBoardAtElement($spellFromPool->number, $element);
+        Notifications::notifyPlayerReplacingSpellPoolCard($spellOnBoard, $spellFromPool, $playerId);
     }
 }

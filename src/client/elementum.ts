@@ -26,8 +26,10 @@ import { UniversalElementDestinationChoiceState } from "./states/UniversalElemen
 import { announce } from "./gui/Announcement";
 import { DestroyTargetSelectionState } from "./states/DestroyTargetSelectionState";
 import { AddFromSpellPoolSpellSelectionState } from "./states/AddFromSpellPoolSpellSelectionState";
-import { AddFromSpellPoolUniversalElementSpellDestinationState } from "./states/AddFromSpellPoolUniversalElementSpellDestinationState";
+import { ExchangeWithSpellPoolUniversalElementSpellDestinationState } from "./states/ExchangeWithSpellPoolUniversalElementSpellDestinationState";
 import { CopyImmediateSpellSelectionState } from "./states/CopyImmediateSpellSelectionState";
+import { ExchangeWithSpellPoolSpellOnBoardSelectionState } from "./states/ExchangeWithSpellPoolSpellOnBoardSelectionState";
+import { ExchangeWithSpellPoolSpellFromPoolSelectionState } from "./states/ExchangeWithSpellPoolSpellFromPoolSelectionState";
 
 /** The root for all of your game code. */
 export class Elementum extends CommonMixer(Gamegui) {
@@ -104,13 +106,22 @@ export class Elementum extends CommonMixer(Gamegui) {
       addFromSpellPool_spellSelection:
         new AddFromSpellPoolSpellSelectionState(),
       addFromSpellPool_universalElementSpellDestination:
-        new AddFromSpellPoolUniversalElementSpellDestinationState(
+        new ExchangeWithSpellPoolUniversalElementSpellDestinationState(
           this.gui,
           this
         ),
       copyImmediateSpell_spellSelection: new CopyImmediateSpellSelectionState(
         this.gui
       ),
+      exchangeWithSpellPool_spellOnBoardSelection:
+        new ExchangeWithSpellPoolSpellOnBoardSelectionState(this.gui),
+      exchangeWithSpellPool_spellFromSpellPoolSelection:
+        new ExchangeWithSpellPoolSpellFromPoolSelectionState(this),
+      exchangeWithSpellPool_universalElementSpellDestination:
+        new ExchangeWithSpellPoolUniversalElementSpellDestinationState(
+          this.gui,
+          this
+        ),
     };
   }
 
@@ -190,10 +201,7 @@ export class Elementum extends CommonMixer(Gamegui) {
     onNotification("newSpellPoolCard").do((notification: Notif) => {
       const newSpellNumber = notification.args!
         .newSpellNumber as Spell["number"];
-      // const oldSpellNumber = notification.args!
-      //   .oldSpellNumber as Spell["number"];
       this.gui.putSpellInSpellPool(newSpellNumber);
-      // this.gui.removeSpellInSpellPool(oldSpellNumber);
     });
     onNotification("youPaidCrystalForSpellPool").do((notification: Notif) => {
       this.gui.crystals.moveCrystalFromPlayerToPile(
@@ -235,6 +243,17 @@ export class Elementum extends CommonMixer(Gamegui) {
       const element = notification.args!.element as Element;
       const spell = this.getSpellByNumber(spellNumber);
       this.gui.putSpellOnBoard(playerId, spell!, element);
+    });
+    onNotification("exchangedSpellWithPool").do((notification: Notif) => {
+      console.log("Spell exchanged with pool", notification.args);
+      const playerId = notification.args!.playerId as PlayerId;
+      const spellNumber = notification.args!.spellNumber as Spell["number"];
+      const spellPoolNumber = notification.args!
+        .spellPoolNumber as Spell["number"];
+      const element = notification.args!.element as Element;
+      const spellFromPool = this.getSpellByNumber(spellPoolNumber);
+      this.gui.putSpellOnBoard(playerId, spellFromPool!, element);
+      this.gui.putSpellInSpellPool(spellNumber);
     });
   }
 

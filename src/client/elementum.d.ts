@@ -62,6 +62,11 @@ declare global {
     actAddFromSpellPool_PickTargetElement: string;
     actAddFromSpellPool_CancelDestinationChoice: string;
     actCopyImmediateSpell_selectSpell: string;
+    actExchangeWithSpellPool_SelectSpellOnBoard: string;
+    actExchangeWithSpellPool_SelectSpellFromPool: string;
+    actExchangeWithSpellPool_CancelSpellOnBoardChoice: string;
+    actExchangeWithSpellPool_PickTargetElement: string;
+    actExchangeWithSpellPool_CancelElementDestinationChoice: string;
   }
 
   type PlayerId = string;

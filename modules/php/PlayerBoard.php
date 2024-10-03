@@ -92,7 +92,7 @@ class PlayerBoard extends  \APP_DbObject
         return new PlayerBoardSummary($fireCount, $waterCount, $earthCount, $airCount);
     }
 
-    public function destroySpell(int $spellNumberToDestroy)
+    public function removeSpell(int $spellNumberToDestroy)
     {
         foreach ($this->board as $element => $spells) {
             $this->board[$element] = array_values(array_filter($spells, function ($spellNumberOnBoard) use ($spellNumberToDestroy) {

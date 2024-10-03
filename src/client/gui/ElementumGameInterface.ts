@@ -267,4 +267,12 @@ export class ElementumGameInterface {
       playerBoard.removeSpell(spell);
     });
   }
+
+  makeSpellsClickableOnCurrentPlayersBoard() {
+    this.playerBoards[this.core.getCurrentPlayerId()]!.makeSpellsClickable();
+  }
+
+  makeSpellsNotClickableOnCurrentPlayersBoard() {
+    this.playerBoards[this.core.getCurrentPlayerId()]!.makeSpellsNotClickable();
+  }
 }

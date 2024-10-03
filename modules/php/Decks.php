@@ -117,12 +117,20 @@ class Decks
         return !empty($cardsInPlayerHand) ? array_shift($cardsInPlayerHand) : null;
     }
 
-    public function replaceCardInSpellPoolAndPlayerBoard(int $pickedSpellNumber, int $spellPoolSpellNumber, int $playerId)
+    public function playCardFromSpellPool(int $pickedSpellNumber, int $spellPoolSpellNumber, int $playerId)
     {
         $cardFromSpellPool = $this->findCardInSpellPool($spellPoolSpellNumber);
         $cardFromHand = $this->findCardInPlayerHand($pickedSpellNumber, $playerId);
         $this->cards->moveCard($cardFromSpellPool['id'], 'board', $playerId);
         $this->cards->moveCard($cardFromHand['id'], 'spellPool');
+    }
+
+    public function swapCardsBetweenPlayerBoardAndSpellPool(int $pickedSpellNumber, int $spellPoolSpellNumber, int $playerId)
+    {
+        $cardFromSpellPool = $this->findCardInSpellPool($spellPoolSpellNumber);
+        $cardFromBoard = $this->findCardInPlayerBoard($pickedSpellNumber, $playerId);
+        $this->cards->moveCard($cardFromSpellPool['id'], 'board', $playerId);
+        $this->cards->moveCard($cardFromBoard['id'], 'spellPool');
     }
 
     public function playCardFromHand(int $spellNumber, int $playerId)

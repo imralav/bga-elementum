@@ -2,10 +2,9 @@ import { ActionsAPI } from "../ActionsAPI";
 import { Elementum } from "../elementum";
 import { ElementumGameInterface } from "../gui/ElementumGameInterface";
 import { Element } from "../spells/elementum.types";
-import { Spell } from "../spells/Spell";
 import { NoopState } from "./NoopState";
 
-export class AddFromSpellPoolUniversalElementSpellDestinationState extends NoopState {
+export class ExchangeWithSpellPoolUniversalElementSpellDestinationState extends NoopState {
   constructor(
     private gui: ElementumGameInterface,
     private elementum: Elementum
@@ -23,15 +22,13 @@ export class AddFromSpellPoolUniversalElementSpellDestinationState extends NoopS
 
   onUpdateActionButtons(args: AnyGameStateArgs | null): void {
     this.elementum.addCancelButton(_("Cancel"), () =>
-      ActionsAPI.actAddFromSpellPool_CancelDestinationChoice().then(() => {
-        this.gui.unpickSpellOnSpellPool();
-      })
+      ActionsAPI.actExchangeWithSpellPool_CancelElementDestinationChoice()
     );
   }
 
   elementSourceClicked(playerId: PlayerId, element: Element): void {
     console.log("Element source clicked", element);
-    ActionsAPI.actAddFromSpellPool_PickTargetElement(element)
+    ActionsAPI.actExchangeWithSpellPool_PickTargetElement(element)
       .then(() => {
         console.log("Picking element source", element);
       })

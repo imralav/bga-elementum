@@ -121,4 +121,10 @@ class Notifications
         $playerName = Elementum::get()->getPlayerNameById($playerId);
         Elementum::get()->notifyAllPlayers('selectedSpellToCopy', '${playerName} selected spell ${spellNumber}:${spellName} to copy.', ['playerId' => $playerId, 'playerName' => $playerName, 'spellNumber' => $spell->number, 'spellName' => $spell->name]);
     }
+
+    public static function notifyPlayerExchangedSpellWithPool(int $playerId, Spell $spell, Spell $spellFromPool, string $element)
+    {
+        $playerName = Elementum::get()->getPlayerNameById($playerId);
+        Elementum::get()->notifyAllPlayers('exchangedSpellWithPool', '${playerName} exchanged ${spellNumber}:${spellName} with ${spellPoolNumber}:${spellPoolName} from the Spell Pool.', ['playerId' => $playerId, 'playerName' => $playerName, 'spellNumber' => $spell->number, 'spellName' => $spell->name, 'spellPoolNumber' => $spellFromPool->number, 'spellPoolName' => $spellFromPool->name, 'element' => $element]);
+    }
 }

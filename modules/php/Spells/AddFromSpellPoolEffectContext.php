@@ -4,7 +4,7 @@ namespace Elementum\SpellEffects;
 
 use Elementum;
 
-class AddFromSpellPoolEffectHandler
+class AddFromSpellPoolEffectContext
 {
     private const SELECTED_SPELL_KEY = 'addFromSpellPool_selectedSpell';
 

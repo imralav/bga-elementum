@@ -91,7 +91,7 @@ export class ActionsAPI {
 
   public static async actAddFromSpellPool_CancelDestinationChoice(): Promise<void> {
     return Elementum.getInstance()
-      .performPossibleAction("actAddFromSpellPool_CancelDestinationChoice")
+      .performAction("actAddFromSpellPool_CancelDestinationChoice")
       .catch(() => {
         throw new Error("Error cancelling draft choice");
       });
@@ -106,6 +106,56 @@ export class ActionsAPI {
       })
       .catch(() => {
         throw new Error("Error copying immediate spell");
+      });
+  }
+
+  public static async actExchangeWithSpellPool_SelectSpellOnBoard(
+    spellNumber: Spell["number"]
+  ): Promise<void> {
+    return Elementum.getInstance()
+      .performAction("actExchangeWithSpellPool_SelectSpellOnBoard", {
+        spellNumber,
+      })
+      .catch(() => {
+        throw new Error("Error exchanging with spell pool");
+      });
+  }
+
+  public static async actExchangeWithSpellPool_CancelSpellOnBoardChoice() {
+    return Elementum.getInstance()
+      .performAction("actExchangeWithSpellPool_CancelSpellOnBoardChoice")
+      .catch(() => {
+        throw new Error("Error cancelling exchange with spell pool");
+      });
+  }
+
+  public static async actExchangeWithSpellPool_SelectSpellFromPool(
+    spellNumberFromPool: Spell["number"]
+  ): Promise<void> {
+    return Elementum.getInstance()
+      .performAction("actExchangeWithSpellPool_SelectSpellFromPool", {
+        spellNumberFromPool,
+      })
+      .catch(() => {
+        throw new Error("Error exchanging with spell pool");
+      });
+  }
+
+  public static async actExchangeWithSpellPool_CancelElementDestinationChoice() {
+    return Elementum.getInstance()
+      .performAction("actExchangeWithSpellPool_CancelElementDestinationChoice")
+      .catch(() => {
+        throw new Error("Error cancelling exchange with spell pool");
+      });
+  }
+
+  public static async actExchangeWithSpellPool_PickTargetElement(
+    element: Element
+  ): Promise<void> {
+    return Elementum.getInstance()
+      .performAction("actExchangeWithSpellPool_PickTargetElement", { element })
+      .catch(() => {
+        throw new Error("Error using element source");
       });
   }
 }

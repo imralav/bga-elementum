@@ -36,17 +36,17 @@ spl_autoload_register($swdNamespaceAutoload, true, true);
 
 # Checklist of spell effects
 
-To do:
+## To do:
 
 - playTwoSpellsEffect: it should probably be put at the end of spellsPlayedThisTurn
+- exchangeWithSpellPoolEffect: frontend
 
-In progress:
+## Done:
 
-- copyImmediateSpellEffect: additional states, backend handling, frontend handling
-
-Done:
+### Immediate effects:
 
 - CrushCrystalsSpellEffect
 - TakeCrystalSpellEffect
 - DestroyCrystalSpellEffect
 - AddSpellFromSpellPool
+- CopyImmediateSpellEffect
