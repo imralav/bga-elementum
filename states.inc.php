@@ -118,7 +118,7 @@ $machinestates = array(
         "description" => "Resolving immediate effects of spells",
         "type" => "game",
         "action" => "st_immediateEffectsResolution",
-        "transitions" => ['placingPowerCrystals' => 6, 'destroyTargetSelection' => 51, 'addFromSpellPool' => 52, 'copyImmediateSpell' => 54, 'exchangeWithSpellPool' => 55]
+        "transitions" => ['placingPowerCrystals' => 6, 'destroyTargetSelection' => 51, 'addFromSpellPool' => 52, 'copyImmediateSpell' => 54, 'exchangeWithSpellPool' => 55, 'playTwoSpells' => 3]
     ),
 
     //////////////////////////////////////////////////////////////////////////////
@@ -201,18 +201,20 @@ $machinestates = array(
     //////////////////////////////////////////////////////////////////////////////
     6 => array(
         "name" => "placingPowerCrystals",
-        "description" => "Placing power crystals on players boards",
-        "type" => "game",
-        "action" => "st_placingPowerCrystals",
+        "description" => clienttranslate("Players are placing power crystals on their spells"),
+        "descriptionmyturn" => clienttranslate('${you} must place a Power Crystal on your Spell or '),
+        "type" => "multipleactiveplayer",
+        "action" => "stMakeEveryoneActive",
+        "possibleactions" => ["actPlacePowerCrystal", "actDontPlacePowerCrystal"],
         "transitions" => ['checkRoundEnd' => 7]
     ),
 
     7 => array(
         "name" => "checkRoundEndAndPassSpells",
-        "description" => "Checking if the round has ended and passing spells to continue draft",
+        "description" => clienttranslate("Checking if the round has ended and passing spells to continue draft"),
         "type" => "game",
         "action" => "st_checkRoundEndAndPassSpells",
-        "transitions" => ['nextDraft' => 3, 'nextRound' => 2]
+        "transitions" => ['passHand' => 3, 'nextRound' => 2]
     ),
 
     8 => array(

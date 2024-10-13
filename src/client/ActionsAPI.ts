@@ -158,4 +158,20 @@ export class ActionsAPI {
         throw new Error("Error using element source");
       });
   }
+
+  public static async actDontPlacePowerCrystal() {
+    return Elementum.getInstance()
+      .performAction("actDontPlacePowerCrystal")
+      .catch(() => {
+        throw new Error("Error cancelling crystal placement");
+      });
+  }
+
+  public static async actPlacePowerCrystal(spellNumber: Spell["number"]) {
+    return Elementum.getInstance()
+      .performAction("actPlacePowerCrystal", { spellNumber })
+      .catch(() => {
+        throw new Error("Error placing power crystal");
+      });
+  }
 }

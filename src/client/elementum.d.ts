@@ -32,7 +32,8 @@ declare global {
     currentPlayerHand: Record<number, Spell>;
     pickedSpell?: Spell["number"];
     crystalsInPile: number;
-    crystalsPerPlayer: Record<PlayerId, string>;
+    crystalsPerPlayer: Record<PlayerId, number>;
+    crystalsPerSpell: Record<Spell["number"], number>;
     playerBoards: Record<PlayerId, PlayerBoardAndElementSources>;
     currentRound: number;
   }
@@ -67,6 +68,8 @@ declare global {
     actExchangeWithSpellPool_CancelSpellOnBoardChoice: string;
     actExchangeWithSpellPool_PickTargetElement: string;
     actExchangeWithSpellPool_CancelElementDestinationChoice: string;
+    actDontPlacePowerCrystal: string;
+    actPlacePowerCrystal: string;
   }
 
   type PlayerId = string;

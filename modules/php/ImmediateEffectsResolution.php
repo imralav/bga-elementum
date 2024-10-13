@@ -3,7 +3,7 @@
 namespace Elementum;
 
 use Elementum;
-use Elementum\Crystals;
+use Elementum\PlayerCrystals;
 
 /**
  * Responsible for:
@@ -97,13 +97,13 @@ class ImmediateEffectsResolution
     private function resolveEffectNotRequiringPlayerInput(int $playerId, string $effectType)
     {
         if ($effectType === TAKE_CRYSTAL_SPELL_EFFECT_TYPE) {
-            Crystals::incrementFor($playerId);
+            PlayerCrystals::moveFromMainPileToPlayer($playerId);
             self::spellResolvedFor($playerId);
             Notifications::notifyPlayerTookCrystal($playerId);
         } else if ($effectType === CRUSH_CRYSTALS_SPELL_EFFECT_TYPE) {
             $allPlayers = Elementum::get()->loadPlayersBasicInfos();
             $allPlayerIds = array_keys($allPlayers);
-            Crystals::decrementMany($allPlayerIds);
+            PlayerCrystals::moveOneCrystalsFromAllPlayersBackToMainPile($allPlayerIds);
             self::spellResolvedFor($playerId);
             Notifications::notifyEveryoneLostCrystal();
         }

@@ -41,6 +41,7 @@
 */
 div.spell,
 div.element-source {
+  position: relative;
   width: 100px;
   height: 66.285px;
   font-size: 10px;
@@ -85,6 +86,12 @@ div.element-source pre {
 div.spell pre.effect,
 div.element-source pre.effect {
   font-size: 8px;
+}
+div.spell div.crystals,
+div.element-source div.crystals {
+  width: 20x;
+  right: 20px;
+  position: absolute;
 }
 
 div.element-source {

@@ -4,7 +4,11 @@ namespace Elementum;
 
 use Elementum;
 
-class Crystals extends  \APP_DbObject
+/**
+ * Responsible for keeping track of the amount of Crystals on: main pile, pile per player and general amount of crystals on spells.
+ * Remembering which spell has how many crystals on it is responsibility of {@link CrystalsOnSpells}.
+ */
+class PlayerCrystals extends  \APP_DbObject
 {
     public const INITIAL_CRYSTALS_AMOUNT = 14;
     public const INITIAL_CRYSTALS_PER_PLAYER = 2;
@@ -43,40 +47,47 @@ class Crystals extends  \APP_DbObject
     public static function getCrystalsPerPlayer()
     {
         $sql = 'select owner, amount from crystals where owner != \'pile\'';
-        return Elementum::get()->getCollectionFromDB($sql, true);
+        $result = Elementum::get()->getCollectionFromDB($sql, true);
+        return array_map('intval', $result);
     }
 
-    public static function decrementFor($playerId)
+    public static function moveFromPlayerToMainPile(int $playerId)
     {
         $sql = "update crystals set amount = amount - 1 where owner = '$playerId'";
         Elementum::get()->DbQuery($sql);
-        Crystals::incrementCrystalsOnPile();
+        $sql = "update crystals set amount = amount + 1 where owner = 'pile'";
+        Elementum::get()->DbQuery($sql);
     }
 
-    public static function incrementFor($playerId)
+    public static function moveFromMainPileToPlayer(int $playerId)
     {
         $sql = "update crystals set amount = amount + 1 where owner = '$playerId'";
         Elementum::get()->DbQuery($sql);
-        Crystals::decrementCrystalsOnPile();
-    }
-
-    private static function decrementCrystalsOnPile()
-    {
         $sql = 'update crystals set amount = amount - 1 where owner = \'pile\'';
         Elementum::get()->DbQuery($sql);
     }
 
-    private static function incrementCrystalsOnPile()
-    {
-        $sql = 'update crystals set amount = amount + 1 where owner = \'pile\'';
-        Elementum::get()->DbQuery($sql);
-    }
-
-    public static function decrementMany(array $playerIds)
+    public static function moveOneCrystalsFromAllPlayersBackToMainPile(array $playerIds)
     {
         $sql = 'update crystals set amount = amount - 1 where owner in (\'' . implode('\',\'', $playerIds) . '\')';
         Elementum::get()->DbQuery($sql);
         $sql = 'update crystals set amount = amount + ' . count($playerIds) . " where owner = 'pile'";
+        Elementum::get()->DbQuery($sql);
+    }
+
+    public static function moveCrystalsFromSpellsToPile(int $amount)
+    {
+        $sql = 'update crystals set amount = amount + ' . $amount . " where owner = 'pile'";
+        Elementum::get()->DbQuery($sql);
+        $sql = 'update crystals set amount = amount - ' . $amount . " where owner = 'spells'";
+        Elementum::get()->DbQuery($sql);
+    }
+
+    public static function moveFromPlayerPileToSpells(int $playerId, int $amount)
+    {
+        $sql = "update crystals set amount = amount - $amount where owner = '$playerId'";
+        Elementum::get()->DbQuery($sql);
+        $sql = "update crystals set amount = amount + $amount where owner = 'spells'";
         Elementum::get()->DbQuery($sql);
     }
 }

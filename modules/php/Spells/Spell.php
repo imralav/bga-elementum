@@ -23,8 +23,9 @@ class Spell
     public string $element;
     public SpellEffect $effect;
     public ?EmpoweredSpellEffect $empoweredEffect;
+    public int $crystalSlots = 0;
     public SpellActivation $spellActivation;
-    private function __construct(int $number, string $name, string $element, SpellEffect $effect, ?EmpoweredSpellEffect $empoweredEffect, SpellActivation $spellActivation)
+    private function __construct(int $number, string $name, string $element, SpellEffect $effect, ?EmpoweredSpellEffect $empoweredEffect, int $crystalSlots, SpellActivation $spellActivation)
     {
         $this->number = $number;
         $this->name = $name;
@@ -32,16 +33,17 @@ class Spell
         $this->effect = $effect;
         $this->empoweredEffect = $empoweredEffect;
         $this->spellActivation = $spellActivation;
+        $this->crystalSlots = $crystalSlots;
     }
 
-    public static function createWithEmpoweredEffects(int $number, string $name, string $element, SpellEffect $effect, EmpoweredSpellEffect $empoweredEffect, SpellActivation $spellActivation)
+    public static function createWithEmpoweredEffects(int $number, string $name, string $element, SpellEffect $effect, EmpoweredSpellEffect $empoweredEffect, int $crystalSlots, SpellActivation $spellActivation)
     {
-        return new Spell($number, $name, $element, $effect, $empoweredEffect, $spellActivation);
+        return new Spell($number, $name, $element, $effect, $empoweredEffect, $crystalSlots, $spellActivation);
     }
 
-    public static function create(int $number, string $name, string $element, SpellEffect $effect, SpellActivation $spellActivation)
+    public static function create(int $number, string $name, string $element, SpellEffect $effect, SpellActivation $spellActivation, int $crystalSlots = 0): Spell
     {
-        return new Spell($number, $name, $element, $effect, null, $spellActivation);
+        return new Spell($number, $name, $element, $effect, null, $crystalSlots, $spellActivation);
     }
 
     public function isUniversalElement(): bool

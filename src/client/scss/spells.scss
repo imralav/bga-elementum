@@ -3,6 +3,7 @@ $card-height: 66.285px;
 
 div.spell,
 div.element-source {
+  position: relative;
   width: $card-width;
   height: $card-height;
   font-size: 10px;
@@ -48,6 +49,12 @@ div.element-source {
     &.effect {
       font-size: 8px;
     }
+  }
+
+  div.crystals {
+    width: 20x;
+    right: 20px;
+    position: absolute;
   }
 }
 

@@ -30,6 +30,7 @@ import { ExchangeWithSpellPoolUniversalElementSpellDestinationState } from "./st
 import { CopyImmediateSpellSelectionState } from "./states/CopyImmediateSpellSelectionState";
 import { ExchangeWithSpellPoolSpellOnBoardSelectionState } from "./states/ExchangeWithSpellPoolSpellOnBoardSelectionState";
 import { ExchangeWithSpellPoolSpellFromPoolSelectionState } from "./states/ExchangeWithSpellPoolSpellFromPoolSelectionState";
+import { PlacingPowerCrystalsState } from "./states/PlacingPowerCrystalsState";
 
 /** The root for all of your game code. */
 export class Elementum extends CommonMixer(Gamegui) {
@@ -62,6 +63,7 @@ export class Elementum extends CommonMixer(Gamegui) {
       pickedSpell: gamedatas.pickedSpell,
       crystalsInPile: gamedatas.crystalsInPile,
       crystalsPerPlayer: gamedatas.crystalsPerPlayer,
+      crystalsPerSpell: gamedatas.crystalsPerSpell,
       playerBoards: gamedatas.playerBoards,
       core: this,
     });
@@ -122,6 +124,7 @@ export class Elementum extends CommonMixer(Gamegui) {
           this.gui,
           this
         ),
+      placingPowerCrystals: new PlacingPowerCrystalsState(this.gui, this),
     };
   }
 
@@ -254,6 +257,11 @@ export class Elementum extends CommonMixer(Gamegui) {
       const spellFromPool = this.getSpellByNumber(spellPoolNumber);
       this.gui.putSpellOnBoard(playerId, spellFromPool!, element);
       this.gui.putSpellInSpellPool(spellNumber);
+    });
+    onNotification("playerPlacedPowerCrystal").do((notification: Notif) => {
+      const playerId = notification.args!.playerId as PlayerId;
+      const spellNumber = notification.args!.spellNumber as Spell["number"];
+      this.gui.crystals.moveCrystalFromPlayerToSpell(playerId, spellNumber);
     });
   }
 

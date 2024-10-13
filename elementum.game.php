@@ -23,8 +23,9 @@ require_once('modules/php/PlayerMoveChoices/PickedSpells.php');
 require_once('modules/php/PlayerMoveChoices/DraftChoices.php');
 require_once('modules/php/Spells/AddFromSpellPoolEffectContext.php');
 require_once('modules/php/Spells/ExchangeWithSpellPoolEffectContext.php');
+require_once('modules/php/CrystalsOnSpells.php');
 
-use Elementum\Crystals;
+use Elementum\PlayerCrystals;
 use Elementum\PlayerMoveChoices\DraftChoices;
 use Elementum\ElementumGameLogic;
 use Elementum\Notifications;
@@ -35,6 +36,7 @@ use Elementum\SpellEffects\AddFromSpellPoolEffectContext;
 use Elementum\SpellEffects\ExchangeWithSpellPoolEffectContext;
 use Elementum\Spells\Spell;
 use Elementum\Spells\SpellActivation;
+use Elementum\CrystalsOnSpells;
 
 /**
  * TODO: fajne linki o typowaniu w PHP:
@@ -135,8 +137,9 @@ class Elementum extends Table
         $elementumGameLogic = ElementumGameLogic::restoreFromDB();
         $result['spellsLeftInDeck'] = $elementumGameLogic->getAmountOfSpellsLeftInDeck();
         $result['spellPool'] = $elementumGameLogic->getSpellPool();
-        $result['crystalsPerPlayer'] = Crystals::getCrystalsPerPlayer();
-        $result['crystalsInPile'] = Crystals::getAmountOfCrystalsOnPile();
+        $result['crystalsPerPlayer'] = PlayerCrystals::getCrystalsPerPlayer();
+        $result['crystalsInPile'] = PlayerCrystals::getAmountOfCrystalsOnPile();
+        $result['crystalsPerSpell'] = CrystalsOnSpells::getCrystalsOnSpells();
         $result['playerBoards'] = array_map(
             function ($playerBoards) {
                 return array("board" => $playerBoards->board, "elementSources" => $playerBoards->elementSources);
@@ -239,7 +242,7 @@ class Elementum extends Table
     function actUseSpellPool(int $spellFromPoolNumber)
     {
         $currentPlayerId = $this->getCurrentPlayerId();
-        $crystals = Crystals::getCrystalsFor($currentPlayerId);
+        $crystals = PlayerCrystals::getCrystalsFor($currentPlayerId);
         if ($crystals < 1) {
             throw new BgaUserException("You don't have enough crystals to use the Spell Pool");
         }
@@ -293,9 +296,17 @@ class Elementum extends Table
         $spell = self::getSpellByNumber($spellNumber);
         $elementumGameLogic = ElementumGameLogic::restoreFromDB();
         $elementumGameLogic->destroySpell($spellNumber, $victimPlayerId);
+        $this->clearCrystalsFromDestroyedSpell($spellNumber);
         ImmediateEffectsResolution::spellResolvedFor($currentPlayerId);
         Notifications::notifyPlayerDestroyedSpell($currentPlayerId, $spell, $victimPlayerId);
         $this->gamestate->nextState('destroyTargetSelected');
+    }
+
+    private function clearCrystalsFromDestroyedSpell(int $spellNumber)
+    {
+        $crystalsToMove = CrystalsOnSpells::getCrystalsOnSpell($spellNumber);
+        CrystalsOnSpells::removeAllCrystalsOnSpell($spellNumber);
+        PlayerCrystals::moveCrystalsFromSpellsToPile($crystalsToMove);
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -416,6 +427,30 @@ class Elementum extends Table
         $this->gamestate->nextState('cancel');
     }
 
+    function actPlacePowerCrystal(int $spellNumber)
+    {
+        $currentPlayerId = $this->getCurrentPlayerId();
+        $spell = self::getSpellByNumber($spellNumber);
+        if (!CrystalsOnSpells::canPutCrystalsOnSpell($spell)) {
+            throw new BgaUserException("You can't place more crystals on this spell");
+        }
+        if (PlayerCrystals::getCrystalsPerPlayer($currentPlayerId) < 1) {
+            throw new BgaUserException("You don't have any crystals to place");
+        }
+        $this->debug("Player $currentPlayerId is placing a power crystal on Spell number: $spellNumber");
+        CrystalsOnSpells::putCrystalOnSpell($spellNumber);
+        PlayerCrystals::moveFromPlayerPileToSpells($currentPlayerId, 1);
+        Notifications::notifyPlayerPlacedPowerCrystal($currentPlayerId, $spell);
+        $this->gamestate->setPlayerNonMultiactive($currentPlayerId, 'checkRoundEnd');
+    }
+
+    function actDontPlacePowerCrystal()
+    {
+        $currentPlayerId = $this->getCurrentPlayerId();
+        $this->debug("Player $currentPlayerId decided to not place crystal");
+        $this->gamestate->setPlayerNonMultiactive($currentPlayerId, 'checkRoundEnd');
+    }
+
     //////////////////////////////////////////////////////////////////////////////
     //////////// Game state arguments
     ////////////
@@ -495,7 +530,7 @@ class Elementum extends Table
                 $elementumGameLogic->passSpells($spellPassingOrder);
                 $this->notifyPlayersAboutNewHandOfSpells($elementumGameLogic);
             }
-            $this->gamestate->nextState('nextDraft');
+            $this->gamestate->nextState('passHand');
         }
     }
 

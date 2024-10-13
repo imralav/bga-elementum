@@ -2,7 +2,7 @@
 
 namespace Elementum;
 
-require_once('Crystals.php');
+require_once('PlayerCrystals.php');
 require_once('PlayerBoard.php');
 require_once('PlayerMoveChoices/PickedSpells.php');
 require_once('PlayerMoveChoices/DraftChoices.php');
@@ -20,7 +20,6 @@ use Elementum\PlayerMoveChoices\SpellPoolChoiceResolver;
 use Elementum\PlayerMoveChoices\SpellPoolChoiceResolverInput;
 use Elementum\Players;
 use Elementum\Spells\Spell;
-use Elementum\Spells\SpellActivation;
 
 class ElementumGameLogic
 {
@@ -89,7 +88,7 @@ class ElementumGameLogic
 
     private function createCrystalsPile()
     {
-        Crystals::initNewPile();
+        PlayerCrystals::initNewPile();
     }
 
     private function setFirstRound()
@@ -115,7 +114,7 @@ class ElementumGameLogic
     {
         $players = $this->getPlayers();
         foreach ($players as $player) {
-            Crystals::dealInitialCrystalsTo($player['player_id']);
+            PlayerCrystals::dealInitialCrystalsTo($player['player_id']);
         }
     }
 
@@ -242,7 +241,7 @@ class ElementumGameLogic
     {
         $choices = DraftChoices::getAllSpellPoolChoices();
         $playerBoardSummaries = $this->extractAllPlayerBoardSummaries($choices);
-        $crystalsPerPlayer = Crystals::getCrystalsPerPlayer();
+        $crystalsPerPlayer = PlayerCrystals::getCrystalsPerPlayer();
         $input = new SpellPoolChoiceResolverInput($choices, $playerBoardSummaries, $crystalsPerPlayer);
         $resolver = new SpellPoolChoiceResolver(Elementum::get());
         $result = $resolver->resolve($input);
@@ -284,7 +283,7 @@ class ElementumGameLogic
             $targetElement = $choice->getTargetElementForUniversalSpell() ?? $spell->element;
             $playerBoard->putSpellOnBoardAtElement($spell->number, $targetElement);
             $spellsPlayedPerPlayer[$playerId] = $spell->number;
-            Crystals::decrementFor($playerId);
+            PlayerCrystals::moveFromPlayerToMainPile($playerId);
             Notifications::notifyPlayerPaidCrystalForUsingSpellPool($playerId, Players::getAllPlayersBesides($playerId));
             Notifications::notifyPlayerPlayedSpellOnBoard($spell, $playerId, $targetElement);
             Notifications::notifyPlayerThatGetsToUseSpellPool($playerId);

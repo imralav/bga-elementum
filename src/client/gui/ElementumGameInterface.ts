@@ -23,7 +23,8 @@ export interface ElementumGameInterfaceInput {
   playerHand: Spell[];
   pickedSpell?: Spell["number"]; //TODO: shouldnt happen in constructor but in separate method, invoked outside
   crystalsInPile: number;
-  crystalsPerPlayer: Record<string, string>;
+  crystalsPerPlayer: Record<PlayerId, number>;
+  crystalsPerSpell: Record<Spell["number"], number>;
   playerBoards: Gamedatas["playerBoards"];
   core: Elementum;
 }
@@ -52,6 +53,7 @@ export class ElementumGameInterface {
     this.crystals.putCrystalsOnBoardAndInPlayerPanels();
     this.buildPlayerBoards(playerBoards);
     this.makeCurrentPlayerBoardFirst();
+    this.crystals.putCrystalsOnSpells();
     GameInfoPanel.init();
   }
 
@@ -59,7 +61,12 @@ export class ElementumGameInterface {
     const gui = new ElementumGameInterface(
       input.spellPool,
       input.playerHand,
-      new Crystals(input.crystalsInPile, input.crystalsPerPlayer, input.core),
+      new Crystals(
+        input.crystalsInPile,
+        input.crystalsPerPlayer,
+        input.crystalsPerSpell,
+        input.core
+      ),
       input.core,
       input.playerBoards
     );

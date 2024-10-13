@@ -87,6 +87,7 @@ $this->basicSpells = array(
     Elements::FIRE,
     new EachSymbolEffect(Elements::WATER, 1),
     EmpoweredSpellEffect::additive(new EachTripleOfSameElementSpellEffect(Elements::WATER, 2)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -95,6 +96,7 @@ $this->basicSpells = array(
     Elements::FIRE,
     new EachSymbolEffect(Elements::EARTH, 1),
     EmpoweredSpellEffect::additive(new EachTripleOfSameElementSpellEffect(Elements::EARTH, 2)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::create(
@@ -110,6 +112,7 @@ $this->basicSpells = array(
     Elements::FIRE,
     new FullAdjacencySpellEffect(Elements::EARTH, Elements::AIR, 5),
     EmpoweredSpellEffect::additive(new FlatPointsSpellEffect(8)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -118,6 +121,7 @@ $this->basicSpells = array(
     Elements::FIRE,
     new AnyAdjacencySpellEffect(Elements::AIR, 3),
     EmpoweredSpellEffect::additive(new FlatPointsSpellEffect(6)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -126,6 +130,7 @@ $this->basicSpells = array(
     Elements::FIRE,
     new MajorityEffect(Elements::EARTH, 6),
     EmpoweredSpellEffect::additive(new FlatPointsSpellEffect(10)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -134,6 +139,7 @@ $this->basicSpells = array(
     Elements::FIRE,
     new SurroundingEffect(-1, 3, 5),
     EmpoweredSpellEffect::exclusive(new SurroundingEffect(1, 6, 9)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -142,6 +148,7 @@ $this->basicSpells = array(
     Elements::FIRE,
     new DoubleSymbolEffect(Elements::FIRE),
     EmpoweredSpellEffect::exclusive(new QuadrupleSymbolEffect(Elements::FIRE)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::create(
@@ -187,6 +194,7 @@ $this->basicSpells = array(
     Elements::EARTH,
     new EachSymbolEffect(Elements::AIR, 1),
     EmpoweredSpellEffect::additive(new EachTripleOfSameElementSpellEffect(Elements::AIR, 2)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -195,6 +203,7 @@ $this->basicSpells = array(
     Elements::EARTH,
     new EachSymbolEffect(Elements::FIRE, 1),
     EmpoweredSpellEffect::additive(new EachTripleOfSameElementSpellEffect(Elements::FIRE, 2)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::create(
@@ -210,6 +219,7 @@ $this->basicSpells = array(
     Elements::EARTH,
     new FullAdjacencySpellEffect(Elements::WATER, Elements::FIRE, 5),
     EmpoweredSpellEffect::additive(new FlatPointsSpellEffect(8)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -218,6 +228,7 @@ $this->basicSpells = array(
     Elements::EARTH,
     new AnyAdjacencySpellEffect(Elements::WATER, 3),
     EmpoweredSpellEffect::additive(new FlatPointsSpellEffect(6)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -226,6 +237,7 @@ $this->basicSpells = array(
     Elements::EARTH,
     new MajorityEffect(Elements::FIRE, 6),
     EmpoweredSpellEffect::additive(new FlatPointsSpellEffect(10)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -234,6 +246,7 @@ $this->basicSpells = array(
     Elements::EARTH,
     new SurroundingEffect(-1, 3, 5),
     EmpoweredSpellEffect::exclusive(new SurroundingEffect(1, 6, 9)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -242,6 +255,7 @@ $this->basicSpells = array(
     Elements::EARTH,
     new DoubleSymbolEffect(Elements::EARTH),
     EmpoweredSpellEffect::exclusive(new QuadrupleSymbolEffect(Elements::EARTH)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::create(
@@ -287,6 +301,7 @@ $this->basicSpells = array(
     Elements::WATER,
     new EachSymbolEffect(Elements::EARTH, 1),
     EmpoweredSpellEffect::additive(new EachTripleOfSameElementSpellEffect(Elements::EARTH, 2)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -295,6 +310,7 @@ $this->basicSpells = array(
     Elements::WATER,
     new EachSymbolEffect(Elements::AIR, 1),
     EmpoweredSpellEffect::additive(new EachTripleOfSameElementSpellEffect(Elements::AIR, 2)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::create(
@@ -310,6 +326,7 @@ $this->basicSpells = array(
     Elements::WATER,
     new FullAdjacencySpellEffect(Elements::FIRE, Elements::AIR, 5),
     EmpoweredSpellEffect::additive(new FlatPointsSpellEffect(8)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -318,6 +335,7 @@ $this->basicSpells = array(
     Elements::WATER,
     new AnyAdjacencySpellEffect(Elements::FIRE, 3),
     EmpoweredSpellEffect::additive(new FlatPointsSpellEffect(6)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -326,6 +344,7 @@ $this->basicSpells = array(
     Elements::WATER,
     new MajorityEffect(Elements::AIR, 6),
     EmpoweredSpellEffect::additive(new FlatPointsSpellEffect(10)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -334,6 +353,7 @@ $this->basicSpells = array(
     Elements::WATER,
     new SurroundingEffect(-1, 3, 5),
     EmpoweredSpellEffect::exclusive(new SurroundingEffect(1, 6, 9)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -342,6 +362,7 @@ $this->basicSpells = array(
     Elements::WATER,
     new DoubleSymbolEffect(Elements::WATER),
     EmpoweredSpellEffect::exclusive(new QuadrupleSymbolEffect(Elements::WATER)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::create(
@@ -377,7 +398,8 @@ $this->basicSpells = array(
     'Acervus',
     Elements::WATER,
     new PowerInCrystalsSpellEffect(2, 7, 13),
-    SpellActivation::PASSIVE
+    SpellActivation::PASSIVE,
+    3
   ),
 
   //air spells
@@ -387,6 +409,7 @@ $this->basicSpells = array(
     Elements::AIR,
     new EachSymbolEffect(Elements::FIRE, 1),
     EmpoweredSpellEffect::additive(new EachTripleOfSameElementSpellEffect(Elements::FIRE, 2)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -395,6 +418,7 @@ $this->basicSpells = array(
     Elements::AIR,
     new EachSymbolEffect(Elements::WATER, 1),
     EmpoweredSpellEffect::additive(new EachTripleOfSameElementSpellEffect(Elements::WATER, 2)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::create(
@@ -410,6 +434,7 @@ $this->basicSpells = array(
     Elements::AIR,
     new FullAdjacencySpellEffect(Elements::EARTH, Elements::WATER, 5),
     EmpoweredSpellEffect::additive(new FlatPointsSpellEffect(8)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -418,6 +443,7 @@ $this->basicSpells = array(
     Elements::AIR,
     new AnyAdjacencySpellEffect(Elements::EARTH, 3),
     EmpoweredSpellEffect::additive(new FlatPointsSpellEffect(6)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -426,6 +452,7 @@ $this->basicSpells = array(
     Elements::AIR,
     new MajorityEffect(Elements::WATER, 6),
     EmpoweredSpellEffect::additive(new FlatPointsSpellEffect(10)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -434,6 +461,7 @@ $this->basicSpells = array(
     Elements::AIR,
     new SurroundingEffect(-1, 3, 5),
     EmpoweredSpellEffect::exclusive(new SurroundingEffect(1, 6, 9)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::createWithEmpoweredEffects(
@@ -442,6 +470,7 @@ $this->basicSpells = array(
     Elements::AIR,
     new DoubleSymbolEffect(Elements::AIR),
     EmpoweredSpellEffect::exclusive(new QuadrupleSymbolEffect(Elements::AIR)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::create(
@@ -470,14 +499,15 @@ $this->basicSpells = array(
     'Bifarius',
     Elements::AIR,
     new ChangeDraftOrderOrWinADrawSpellEffect(),
-    SpellActivation::PASSIVE
+    SpellActivation::IMMEDIATE //special case, it's immediate and then also counts during scoring
   ),
   Spell::create(
     52,
     'Acervus',
     Elements::AIR,
     new PowerInCrystalsSpellEffect(2, 7, 13),
-    SpellActivation::PASSIVE
+    SpellActivation::PASSIVE,
+    3
   ),
 
   //other spells
@@ -499,7 +529,7 @@ $this->basicSpells = array(
 
 $this->overloadSpell =
   Spell::create(
-    55, //TODO: jaki jest poprawny numer tu? miałem 54, ale to jest zarezerwowane
+    55,
     'SUOERIACIO',
     Elements::OVERLOAD,
     new OverloadEffect(5),

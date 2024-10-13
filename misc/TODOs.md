@@ -1,10 +1,10 @@
 # Main tasks
 
 0. How does Spell 24 work? It adds virtual element sources, but how does it work exactly?
-1. Implement empowering cards after playing them.
-2. Implement immediate card effects.
-3. Scoring after all cards are finished. Waiting for information from game's author about the details unless I figure it out via youtube videos
-4. Implement passive card effects.
+1. Implement immediate card effects.
+2. Implement empowering cards after playing them.
+3. Implement passive card effects.
+4. Scoring after all cards are finished. Waiting for information from game's author about the details unless I figure it out
 
 # Refactorings
 
@@ -38,8 +38,13 @@ spl_autoload_register($swdNamespaceAutoload, true, true);
 
 ## To do:
 
+1. Immediate effects:
+
 - playTwoSpellsEffect: it should probably be put at the end of spellsPlayedThisTurn
-- exchangeWithSpellPoolEffect: frontend
+- ChangeDraftOrderOrWinADrawSpellEffect: it's a special case, it's both immediate and scoring effect
+- OverloadEffect: do it somewhere in the future, it's an optional mode
+
+2. Merge CrystalsOnSpells and PlayerCrystals. It should be one bigger JSON Structure saved in global variables.
 
 ## Done:
 
@@ -50,3 +55,4 @@ spl_autoload_register($swdNamespaceAutoload, true, true);
 - DestroyCrystalSpellEffect
 - AddSpellFromSpellPool
 - CopyImmediateSpellEffect
+- exchangeWithSpellPoolEffect

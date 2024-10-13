@@ -127,4 +127,10 @@ class Notifications
         $playerName = Elementum::get()->getPlayerNameById($playerId);
         Elementum::get()->notifyAllPlayers('exchangedSpellWithPool', '${playerName} exchanged ${spellNumber}:${spellName} with ${spellPoolNumber}:${spellPoolName} from the Spell Pool.', ['playerId' => $playerId, 'playerName' => $playerName, 'spellNumber' => $spell->number, 'spellName' => $spell->name, 'spellPoolNumber' => $spellFromPool->number, 'spellPoolName' => $spellFromPool->name, 'element' => $element]);
     }
+
+    public static function notifyPlayerPlacedPowerCrystal(int $playerId, Spell $spell)
+    {
+        $playerName = Elementum::get()->getPlayerNameById($playerId);
+        Elementum::get()->notifyAllPlayers('playerPlacedPowerCrystal', '${playerName} placed a Power Crystal on ${spellNumber}:${spellName}', ['playerId' => $playerId, 'playerName' => $playerName, 'spellNumber' => $spell->number, 'spellName' => $spell->name]);
+    }
 }

@@ -35,7 +35,7 @@
 <script type="text/javascript">
   // Spells, element sources
   var jstpl_spell =
-    '<div class="spell ${element}" id="spell_${spellNumber}"><pre>${spellSummaryData}</pre><pre class="effect">Effect: ${effect}</pre><pre class="effect">Empowered:${empoweredEffect}</div>';
+    '<div class="spell ${element}" id="spell_${spellNumber}"><div id="spell_${spellNumber}_crystals" class="crystals"></div><pre>${spellSummaryData}</pre><pre class="effect">Effect: ${effect}</pre><pre class="effect">Empowered:${empoweredEffect}</pre></div>';
   var jstpl_element_source =
     '<div class="spell element-source ${element}" id="element-source-${playerId}-${element}">${icon}</div>';
 

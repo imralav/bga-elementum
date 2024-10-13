@@ -1,6 +1,6 @@
 ```mermaid
 classDiagram
-    class Crystals {
+    class PlayerCrystals {
         +initNewPile()
         +dealInitialCrystalsTo($playerId)
         +getCrystalsFor($playerId)
@@ -47,8 +47,8 @@ classDiagram
         +getSpellByNumber($spellNumber)
     }
 
-    Crystals --> Elementum : uses
-    ElementumGameLogic --> Crystals : uses
+    PlayerCrystals --> Elementum : uses
+    ElementumGameLogic --> PlayerCrystals : uses
     ElementumGameLogic --> PlayerBoard : has
     ElementumGameLogic --> PickedSpells : uses
     ElementumGameLogic --> DraftChoice : uses

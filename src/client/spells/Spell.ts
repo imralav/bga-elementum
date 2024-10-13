@@ -11,4 +11,5 @@ export interface Spell {
   spellActivation: "passive" | "immediate";
   effect: SpellEffect;
   empoweredEffect?: SpellEffect;
+  crystalSlots: number;
 }

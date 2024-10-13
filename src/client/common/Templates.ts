@@ -13,7 +13,7 @@ export class Templates {
         spell.name
       }\n(${
         spell.spellActivation === "immediate" ? "immediate" : "passive"
-      })\n`,
+      })(C:${spell.crystalSlots})\n`,
       effect: JSON.stringify(spell.effect, null, 2),
       empoweredEffect: spell.empoweredEffect
         ? JSON.stringify(spell.empoweredEffect, null, 2)
@@ -39,6 +39,10 @@ export class Templates {
 
   static idOfSpellByNumber(spellNumber: Spell["number"]) {
     return `spell_${spellNumber}`;
+  }
+
+  static idOfCrystalsForSpell(spellNumber: Spell["number"]) {
+    return Templates.idOfSpellByNumber(spellNumber) + "_crystals";
   }
 
   static idOfSpellColumn(playerId: PlayerId, element: Element) {
