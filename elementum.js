@@ -443,10 +443,6 @@ define("src/client/gui/Crystals", ["require", "exports", "ebg/zone", "src/client
                 .from(crystalsPileOfPlayer)
                 .to(spellCrystalsPile);
         };
-        Crystals.prototype.moveCristalBetweenPiles = function (crystalId, from, to) {
-            from.zone.removeFromZone(crystalId, false, to.element.id);
-            to.zone.placeInZone(crystalId, 1);
-        };
         Crystals.prototype.moveCristal = function (crystalId) {
             return {
                 from: function (from) { return ({
@@ -459,6 +455,27 @@ define("src/client/gui/Crystals", ["require", "exports", "ebg/zone", "src/client
         };
         Crystals.prototype.crystalsPileOnSpellExists = function (spellNumber) {
             return !!this.crystalsPilesPerSpell[spellNumber];
+        };
+        Crystals.prototype.moveCrystalFromSpellToPile = function (spellNumber) {
+            var id = this.getIdOfFirstCrystalOnSpell(spellNumber);
+            var crystalsPileOfSpell = this.crystalsPilesPerSpell[spellNumber];
+            crystalsPileOfSpell.zone.removeFromZone(id, false, this.crystalsPile.element.id);
+            this.crystalsPile.zone.placeInZone(id, 1);
+        };
+        Crystals.prototype.getIdOfFirstCrystalOnSpell = function (spellNumber) {
+            var crystal = this.crystalsPilesPerSpell[spellNumber].element
+                .childNodes[0];
+            return crystal.id;
+        };
+        Crystals.prototype.moveAllCrystalsFromSpellToPile = function (spellNumber) {
+            var _this = this;
+            var _a;
+            var amount = (_a = this.crystalsPerSpell[spellNumber]) !== null && _a !== void 0 ? _a : 0;
+            for (var i = 0; i < amount; i++) {
+                (0, utils_2.doAfter)(1000 * (2 + i), function () {
+                    return _this.moveCrystalFromSpellToPile(spellNumber);
+                });
+            }
         };
         Crystals.CRYSTALS_PILE_ID = "main-crystals-pile";
         Crystals.CRYSTAL_SIZE = 16;
@@ -1686,7 +1703,47 @@ define("src/client/states/PlacingPowerCrystalsState", ["require", "exports", "sr
     }(NoopState_11.NoopState));
     exports.PlacingPowerCrystalsState = PlacingPowerCrystalsState;
 });
-define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook/common", "src/client/gui/ElementumGameInterface", "src/client/states/NoopState", "src/client/states/PickSpellState", "src/client/states/SpellDestinationChoiceState", "src/client/common/Templates", "src/client/Notifications", "src/client/states/PlayersDraftState", "src/client/gui/GameInfoPanel", "src/client/states/UniversalElementDestinationChoiceState", "src/client/gui/Announcement", "src/client/states/DestroyTargetSelectionState", "src/client/states/AddFromSpellPoolSpellSelectionState", "src/client/states/ExchangeWithSpellPoolUniversalElementSpellDestinationState", "src/client/states/CopyImmediateSpellSelectionState", "src/client/states/ExchangeWithSpellPoolSpellOnBoardSelectionState", "src/client/states/ExchangeWithSpellPoolSpellFromPoolSelectionState", "src/client/states/PlacingPowerCrystalsState"], function (require, exports, Gamegui, CommonMixer, ElementumGameInterface_1, NoopState_12, PickSpellState_1, SpellDestinationChoiceState_1, Templates_7, Notifications_1, PlayersDraftState_1, GameInfoPanel_2, UniversalElementDestinationChoiceState_1, Announcement_1, DestroyTargetSelectionState_1, AddFromSpellPoolSpellSelectionState_1, ExchangeWithSpellPoolUniversalElementSpellDestinationState_1, CopyImmediateSpellSelectionState_1, ExchangeWithSpellPoolSpellOnBoardSelectionState_1, ExchangeWithSpellPoolSpellFromPoolSelectionState_1, PlacingPowerCrystalsState_1) {
+define("src/client/states/AddFromSpellPoolUniversalElementSpellDestinationState copy", ["require", "exports", "src/client/ActionsAPI", "src/client/states/NoopState"], function (require, exports, ActionsAPI_12, NoopState_12) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.AddFromSpellPoolUniversalElementSpellDestinationState = void 0;
+    var AddFromSpellPoolUniversalElementSpellDestinationState = (function (_super) {
+        __extends(AddFromSpellPoolUniversalElementSpellDestinationState, _super);
+        function AddFromSpellPoolUniversalElementSpellDestinationState(gui, elementum) {
+            var _this = _super.call(this) || this;
+            _this.gui = gui;
+            _this.elementum = elementum;
+            return _this;
+        }
+        AddFromSpellPoolUniversalElementSpellDestinationState.prototype.onEnter = function () {
+            this.gui.makeElementSourcesClickableForCurrentPlayer();
+        };
+        AddFromSpellPoolUniversalElementSpellDestinationState.prototype.onLeave = function () {
+            this.gui.makeElementSourcesNotClickableForCurrentPlayer();
+        };
+        AddFromSpellPoolUniversalElementSpellDestinationState.prototype.onUpdateActionButtons = function (args) {
+            var _this = this;
+            this.elementum.addCancelButton(_("Cancel"), function () {
+                return ActionsAPI_12.ActionsAPI.actAddFromSpellPool_CancelDestinationChoice().then(function () {
+                    _this.gui.unpickSpellOnSpellPool();
+                });
+            });
+        };
+        AddFromSpellPoolUniversalElementSpellDestinationState.prototype.elementSourceClicked = function (playerId, element) {
+            console.log("Element source clicked", element);
+            ActionsAPI_12.ActionsAPI.actAddFromSpellPool_PickTargetElement(element)
+                .then(function () {
+                console.log("Picking element source", element);
+            })
+                .catch(function (error) {
+                console.error("Error picking element source", error);
+            });
+        };
+        return AddFromSpellPoolUniversalElementSpellDestinationState;
+    }(NoopState_12.NoopState));
+    exports.AddFromSpellPoolUniversalElementSpellDestinationState = AddFromSpellPoolUniversalElementSpellDestinationState;
+});
+define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook/common", "src/client/gui/ElementumGameInterface", "src/client/states/NoopState", "src/client/states/PickSpellState", "src/client/states/SpellDestinationChoiceState", "src/client/common/Templates", "src/client/Notifications", "src/client/states/PlayersDraftState", "src/client/gui/GameInfoPanel", "src/client/states/UniversalElementDestinationChoiceState", "src/client/gui/Announcement", "src/client/states/DestroyTargetSelectionState", "src/client/states/AddFromSpellPoolSpellSelectionState", "src/client/states/ExchangeWithSpellPoolUniversalElementSpellDestinationState", "src/client/states/CopyImmediateSpellSelectionState", "src/client/states/ExchangeWithSpellPoolSpellOnBoardSelectionState", "src/client/states/ExchangeWithSpellPoolSpellFromPoolSelectionState", "src/client/states/PlacingPowerCrystalsState", "src/client/states/AddFromSpellPoolUniversalElementSpellDestinationState copy"], function (require, exports, Gamegui, CommonMixer, ElementumGameInterface_1, NoopState_13, PickSpellState_1, SpellDestinationChoiceState_1, Templates_7, Notifications_1, PlayersDraftState_1, GameInfoPanel_2, UniversalElementDestinationChoiceState_1, Announcement_1, DestroyTargetSelectionState_1, AddFromSpellPoolSpellSelectionState_1, ExchangeWithSpellPoolUniversalElementSpellDestinationState_1, CopyImmediateSpellSelectionState_1, ExchangeWithSpellPoolSpellOnBoardSelectionState_1, ExchangeWithSpellPoolSpellFromPoolSelectionState_1, PlacingPowerCrystalsState_1, AddFromSpellPoolUniversalElementSpellDestinationState_copy_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Elementum = void 0;
@@ -1748,11 +1805,11 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
                 spellChoice: new PickSpellState_1.PickSpellState(this.gui),
                 spellDestinationChoice: new SpellDestinationChoiceState_1.SpellDestinationChoiceState(this, this.gui),
                 playersDraft: new PlayersDraftState_1.PlayersDraftState(this, this.gui),
-                noop: new NoopState_12.NoopState(),
+                noop: new NoopState_13.NoopState(),
                 universalElementSpellDestination: new UniversalElementDestinationChoiceState_1.UniversalElementDestinationChoiceState(this.gui),
                 destroyTargetSelection: new DestroyTargetSelectionState_1.DestroyTargetSelectionState(this.gui),
                 addFromSpellPool_spellSelection: new AddFromSpellPoolSpellSelectionState_1.AddFromSpellPoolSpellSelectionState(),
-                addFromSpellPool_universalElementSpellDestination: new ExchangeWithSpellPoolUniversalElementSpellDestinationState_1.ExchangeWithSpellPoolUniversalElementSpellDestinationState(this.gui, this),
+                addFromSpellPool_universalElementSpellDestination: new AddFromSpellPoolUniversalElementSpellDestinationState_copy_1.AddFromSpellPoolUniversalElementSpellDestinationState(this.gui, this),
                 copyImmediateSpell_spellSelection: new CopyImmediateSpellSelectionState_1.CopyImmediateSpellSelectionState(this.gui),
                 exchangeWithSpellPool_spellOnBoardSelection: new ExchangeWithSpellPoolSpellOnBoardSelectionState_1.ExchangeWithSpellPoolSpellOnBoardSelectionState(this.gui),
                 exchangeWithSpellPool_spellFromSpellPoolSelection: new ExchangeWithSpellPoolSpellFromPoolSelectionState_1.ExchangeWithSpellPoolSpellFromPoolSelectionState(this),
@@ -1850,6 +1907,7 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
                     .spellPoolNumber;
                 var element = notification.args.element;
                 var spellFromPool = _this.getSpellByNumber(spellPoolNumber);
+                _this.gui.crystals.moveAllCrystalsFromSpellToPile(spellNumber);
                 _this.gui.putSpellOnBoard(playerId, spellFromPool, element);
                 _this.gui.putSpellInSpellPool(spellNumber);
             });
@@ -1893,44 +1951,4 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
     }(CommonMixer(Gamegui)));
     exports.Elementum = Elementum;
     dojo.setObject("bgagame.elementum", Elementum);
-});
-define("src/client/states/AddFromSpellPoolUniversalElementSpellDestinationState copy", ["require", "exports", "src/client/ActionsAPI", "src/client/states/NoopState"], function (require, exports, ActionsAPI_12, NoopState_13) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.AddFromSpellPoolUniversalElementSpellDestinationState = void 0;
-    var AddFromSpellPoolUniversalElementSpellDestinationState = (function (_super) {
-        __extends(AddFromSpellPoolUniversalElementSpellDestinationState, _super);
-        function AddFromSpellPoolUniversalElementSpellDestinationState(gui, elementum) {
-            var _this = _super.call(this) || this;
-            _this.gui = gui;
-            _this.elementum = elementum;
-            return _this;
-        }
-        AddFromSpellPoolUniversalElementSpellDestinationState.prototype.onEnter = function () {
-            this.gui.makeElementSourcesClickableForCurrentPlayer();
-        };
-        AddFromSpellPoolUniversalElementSpellDestinationState.prototype.onLeave = function () {
-            this.gui.makeElementSourcesNotClickableForCurrentPlayer();
-        };
-        AddFromSpellPoolUniversalElementSpellDestinationState.prototype.onUpdateActionButtons = function (args) {
-            var _this = this;
-            this.elementum.addCancelButton(_("Cancel"), function () {
-                return ActionsAPI_12.ActionsAPI.actAddFromSpellPool_CancelDestinationChoice().then(function () {
-                    _this.gui.unpickSpellOnSpellPool();
-                });
-            });
-        };
-        AddFromSpellPoolUniversalElementSpellDestinationState.prototype.elementSourceClicked = function (playerId, element) {
-            console.log("Element source clicked", element);
-            ActionsAPI_12.ActionsAPI.actAddFromSpellPool_PickTargetElement(element)
-                .then(function () {
-                console.log("Picking element source", element);
-            })
-                .catch(function (error) {
-                console.error("Error picking element source", error);
-            });
-        };
-        return AddFromSpellPoolUniversalElementSpellDestinationState;
-    }(NoopState_13.NoopState));
-    exports.AddFromSpellPoolUniversalElementSpellDestinationState = AddFromSpellPoolUniversalElementSpellDestinationState;
 });

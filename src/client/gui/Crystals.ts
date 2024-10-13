@@ -203,15 +203,6 @@ export class Crystals {
       .to(spellCrystalsPile);
   }
 
-  private moveCristalBetweenPiles(
-    crystalId: string,
-    from: CrystalsPile,
-    to: CrystalsPile
-  ) {
-    from.zone.removeFromZone(crystalId, false, to.element.id);
-    to.zone.placeInZone(crystalId, 1);
-  }
-
   private moveCristal(crystalId: string) {
     return {
       from: (from: CrystalsPile) => ({
@@ -225,5 +216,31 @@ export class Crystals {
 
   private crystalsPileOnSpellExists(spellNumber: number) {
     return !!this.crystalsPilesPerSpell[spellNumber];
+  }
+
+  public moveCrystalFromSpellToPile(spellNumber: number) {
+    const id = this.getIdOfFirstCrystalOnSpell(spellNumber);
+    const crystalsPileOfSpell = this.crystalsPilesPerSpell[spellNumber]!;
+    crystalsPileOfSpell.zone.removeFromZone(
+      id,
+      false,
+      this.crystalsPile.element.id
+    );
+    this.crystalsPile.zone.placeInZone(id, 1);
+  }
+
+  private getIdOfFirstCrystalOnSpell(spellNumber: number) {
+    const crystal = this.crystalsPilesPerSpell[spellNumber]!.element
+      .childNodes[0] as HTMLElement;
+    return crystal.id;
+  }
+
+  public moveAllCrystalsFromSpellToPile(spellNumber: number) {
+    const amount = this.crystalsPerSpell[spellNumber] ?? 0;
+    for (let i = 0; i < amount; i++) {
+      doAfter(1000 * (2 + i), () =>
+        this.moveCrystalFromSpellToPile(spellNumber)
+      );
+    }
   }
 }

@@ -31,6 +31,7 @@ import { CopyImmediateSpellSelectionState } from "./states/CopyImmediateSpellSel
 import { ExchangeWithSpellPoolSpellOnBoardSelectionState } from "./states/ExchangeWithSpellPoolSpellOnBoardSelectionState";
 import { ExchangeWithSpellPoolSpellFromPoolSelectionState } from "./states/ExchangeWithSpellPoolSpellFromPoolSelectionState";
 import { PlacingPowerCrystalsState } from "./states/PlacingPowerCrystalsState";
+import { AddFromSpellPoolUniversalElementSpellDestinationState } from "./states/AddFromSpellPoolUniversalElementSpellDestinationState copy";
 
 /** The root for all of your game code. */
 export class Elementum extends CommonMixer(Gamegui) {
@@ -108,7 +109,7 @@ export class Elementum extends CommonMixer(Gamegui) {
       addFromSpellPool_spellSelection:
         new AddFromSpellPoolSpellSelectionState(),
       addFromSpellPool_universalElementSpellDestination:
-        new ExchangeWithSpellPoolUniversalElementSpellDestinationState(
+        new AddFromSpellPoolUniversalElementSpellDestinationState(
           this.gui,
           this
         ),
@@ -255,6 +256,7 @@ export class Elementum extends CommonMixer(Gamegui) {
         .spellPoolNumber as Spell["number"];
       const element = notification.args!.element as Element;
       const spellFromPool = this.getSpellByNumber(spellPoolNumber);
+      this.gui.crystals.moveAllCrystalsFromSpellToPile(spellNumber);
       this.gui.putSpellOnBoard(playerId, spellFromPool!, element);
       this.gui.putSpellInSpellPool(spellNumber);
     });

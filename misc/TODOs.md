@@ -16,23 +16,6 @@
 # Ideas after studying GosuX
 
 1. More constants in material. State indexes, card indexes etc can be extracted to constants.
-2. Consider mass requiring/autoloading files in a directory.
-
-```php
-$swdNamespaceAutoload = function ($class) {
-    $classParts = explode('\\', $class);
-    if ($classParts[0] == 'GOSUX') {
-        array_shift($classParts);
-        $file = dirname(__FILE__) . '/modules/' . implode(DIRECTORY_SEPARATOR, $classParts) . '.php';
-        if (file_exists($file)) {
-            require_once $file;
-        } else {
-            var_dump('Cannot find file : ' . $file);
-        }
-    }
-};
-spl_autoload_register($swdNamespaceAutoload, true, true);
-```
 
 # Checklist of spell effects
 
@@ -45,6 +28,8 @@ spl_autoload_register($swdNamespaceAutoload, true, true);
 - OverloadEffect: do it somewhere in the future, it's an optional mode
 
 2. Merge CrystalsOnSpells and PlayerCrystals. It should be one bigger JSON Structure saved in global variables.
+
+3. Using PSR-4 autoloading standard for PHP
 
 ## Done:
 

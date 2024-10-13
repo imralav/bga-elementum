@@ -64,7 +64,7 @@ class CrystalsOnSpells
         }
         $crystalsOnSpells = self::getCrystalsOnSpells();
         foreach ($spellNumbers as $spellNumber => $amount) {
-            $crystalsOnSpells[$spellNumber] = ($crystalsOnSpells[$spellNumber] ?? 0) + $amount;
+            $crystalsOnSpells[$spellNumber] = $amount;
         }
         Elementum::get()->globals->set(self::CRYSTALS_ON_SPELLS_KEY, $crystalsOnSpells);
     }
@@ -73,6 +73,13 @@ class CrystalsOnSpells
     {
         $crystalsOnSpells = self::getCrystalsOnSpells();
         unset($crystalsOnSpells[$spellNumber]);
+        self::putCrystalsOnSpells($crystalsOnSpells);
+    }
+
+    public static function removeAllCrystalsFromSpell(int $spellNumber)
+    {
+        $crystalsOnSpells = self::getCrystalsOnSpells();
+        $crystalsOnSpells[$spellNumber] = 0;
         self::putCrystalsOnSpells($crystalsOnSpells);
     }
 }

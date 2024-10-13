@@ -391,6 +391,7 @@ class Elementum extends Table
             $spellNumberOnBoard = ExchangeWithSpellPoolEffectContext::getSelectedSpellOnBoard($activePlayerId);
             $spellOnBoard = self::getSpellByNumber($spellNumberOnBoard);
             $elementumGameLogic->exchangeSpellWithPoolAtElement($activePlayerId, $spellOnBoard, $spellFromPool, $spellFromPool->element);
+            $this->moveCrystalsFromMovedSpellToPile($spellNumberOnBoard);
             Notifications::notifyPlayerExchangedSpellWithPool($activePlayerId, $spellOnBoard, $spellFromPool, $spellFromPool->element);
             ImmediateEffectsResolution::spellResolvedFor($activePlayerId);
             ExchangeWithSpellPoolEffectContext::forgetSelectedSpells($activePlayerId);
@@ -414,10 +415,18 @@ class Elementum extends Table
         $spellFromPool = self::getSpellByNumber($spellNumberFromPool);
         $spellOnBoard = self::getSpellByNumber($spellNumberOnBoard);
         $elementumGameLogic->exchangeSpellWithPoolAtElement($activePlayerId, $spellOnBoard, $spellFromPool, $element);
+        $this->moveCrystalsFromMovedSpellToPile($spellNumberOnBoard);
         Notifications::notifyPlayerExchangedSpellWithPool($activePlayerId, $spellOnBoard, $spellFromPool, $element);
         ImmediateEffectsResolution::spellResolvedFor($activePlayerId);
         ExchangeWithSpellPoolEffectContext::forgetSelectedSpells($activePlayerId);
         $this->gamestate->nextState('spellsExchanged');
+    }
+
+    private function moveCrystalsFromMovedSpellToPile(int $spellNumber)
+    {
+        $crystalsToMove = CrystalsOnSpells::getCrystalsOnSpell($spellNumber);
+        CrystalsOnSpells::removeAllCrystalsOnSpell($spellNumber);
+        PlayerCrystals::moveCrystalsFromSpellsToPile($crystalsToMove);
     }
 
     function actExchangeWithSpellPool_CancelElementDestinationChoice()
@@ -434,7 +443,7 @@ class Elementum extends Table
         if (!CrystalsOnSpells::canPutCrystalsOnSpell($spell)) {
             throw new BgaUserException("You can't place more crystals on this spell");
         }
-        if (PlayerCrystals::getCrystalsPerPlayer($currentPlayerId) < 1) {
+        if (PlayerCrystals::getCrystalsPerPlayer()[$currentPlayerId] < 1) {
             throw new BgaUserException("You don't have any crystals to place");
         }
         $this->debug("Player $currentPlayerId is placing a power crystal on Spell number: $spellNumber");
