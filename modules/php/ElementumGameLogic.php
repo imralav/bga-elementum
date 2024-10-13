@@ -19,6 +19,7 @@ use Elementum\PlayerMoveChoices\PickedSpells;
 use Elementum\PlayerMoveChoices\SpellPoolChoiceResolver;
 use Elementum\PlayerMoveChoices\SpellPoolChoiceResolverInput;
 use Elementum\Players;
+use Elementum\SpellEffects\PlayTwoSpellsEffectContext;
 use Elementum\Spells\Spell;
 
 class ElementumGameLogic
@@ -355,8 +356,7 @@ class ElementumGameLogic
 
     public function wasExtraTurnSpellPlayed()
     {
-        //TODO: nie wiem jeszcze jak to poimplementować na razie placeholder
-        return false;
+        return PlayTwoSpellsEffectContext::wasPlayed();
     }
 
     public function passSpells(array $spellPassingOrder)

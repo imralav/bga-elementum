@@ -265,6 +265,9 @@ export class Elementum extends CommonMixer(Gamegui) {
       const spellNumber = notification.args!.spellNumber as Spell["number"];
       this.gui.crystals.moveCrystalFromPlayerToSpell(playerId, spellNumber);
     });
+    onNotification("extraTurn").do(() => {
+      announce("Extra turn! You can play another spell.", 2000);
+    });
   }
 
   public performAction(action: keyof PlayerActions, args?: any): Promise<void> {

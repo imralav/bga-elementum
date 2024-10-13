@@ -118,7 +118,7 @@ $machinestates = array(
         "description" => "Resolving immediate effects of spells",
         "type" => "game",
         "action" => "st_immediateEffectsResolution",
-        "transitions" => ['placingPowerCrystals' => 6, 'destroyTargetSelection' => 51, 'addFromSpellPool' => 52, 'copyImmediateSpell' => 54, 'exchangeWithSpellPool' => 55, 'playTwoSpells' => 3]
+        "transitions" => ['placingPowerCrystals' => 6, 'destroyTargetSelection' => 51, 'addFromSpellPool' => 52, 'copyImmediateSpell' => 54, 'exchangeWithSpellPool' => 55]
     ),
 
     //////////////////////////////////////////////////////////////////////////////
@@ -214,7 +214,7 @@ $machinestates = array(
         "description" => clienttranslate("Checking if the round has ended and passing spells to continue draft"),
         "type" => "game",
         "action" => "st_checkRoundEndAndPassSpells",
-        "transitions" => ['passHand' => 3, 'nextRound' => 2]
+        "transitions" => ['passHand' => 3, 'nextRound' => 2, 'extraTurn' => 3]
     ),
 
     8 => array(

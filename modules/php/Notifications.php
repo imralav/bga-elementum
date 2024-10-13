@@ -133,4 +133,19 @@ class Notifications
         $playerName = Elementum::get()->getPlayerNameById($playerId);
         Elementum::get()->notifyAllPlayers('playerPlacedPowerCrystal', '${playerName} placed a Power Crystal on ${spellNumber}:${spellName}', ['playerId' => $playerId, 'playerName' => $playerName, 'spellNumber' => $spell->number, 'spellName' => $spell->name]);
     }
+
+    public static function notifyAboutExtraTurn()
+    {
+        Elementum::get()->notifyAllPlayers('extraTurn', 'Extra turn starting', []);
+    }
+
+    public static function notifyPlayersAboutNewHandOfSpells($elementumGameLogic)
+    {
+        $players = Elementum::get()->loadPlayersBasicInfos();
+        foreach ($players as $player_id => $player) {
+            $newHand = $elementumGameLogic->getHandOf($player_id);
+            $newHand = array_values($newHand);
+            Notifications::notifyPlayerAboutNewHand($newHand, $player_id);
+        }
+    }
 }

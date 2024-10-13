@@ -1916,6 +1916,9 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
                 var spellNumber = notification.args.spellNumber;
                 _this.gui.crystals.moveCrystalFromPlayerToSpell(playerId, spellNumber);
             });
+            (0, Notifications_1.onNotification)("extraTurn").do(function () {
+                (0, Announcement_1.announce)("Extra turn! You can play another spell.", 2000);
+            });
         };
         Elementum.prototype.performAction = function (action, args) {
             return this.performActionInternal(action, args, false);

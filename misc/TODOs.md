@@ -23,13 +23,19 @@
 
 1. Immediate effects:
 
-- playTwoSpellsEffect: it should probably be put at the end of spellsPlayedThisTurn
 - ChangeDraftOrderOrWinADrawSpellEffect: it's a special case, it's both immediate and scoring effect
-- OverloadEffect: do it somewhere in the future, it's an optional mode
 
-2. Merge CrystalsOnSpells and PlayerCrystals. It should be one bigger JSON Structure saved in global variables.
+2. Using PSR-4 autoloading standard for PHP
 
-3. Using PSR-4 autoloading standard for PHP
+3. Game progression calculation
+
+4. Scoring
+
+5. 3 and 4 player versions with turn order change
+
+6. Putting real images from publisher
+
+7. OverloadEffect: do it somewhere in the future, it's an optional mode
 
 ## Done:
 
@@ -41,3 +47,4 @@
 - AddSpellFromSpellPool
 - CopyImmediateSpellEffect
 - exchangeWithSpellPoolEffect
+- playTwoSpellsEffect

@@ -48,10 +48,7 @@ class PlayerCrystals extends  \APP_DbObject
     {
         $sql = 'select owner, amount from crystals where owner != \'pile\'';
         $result = Elementum::get()->getCollectionFromDB($sql, true);
-        Elementum::get()->dump("=========================================crystals per player", $result);
-        $elo = array_map('intval', $result);
-        Elementum::get()->dump("=========================================after conversion", $elo);
-        return $elo;
+        return array_map('intval', $result);
     }
 
     public static function moveFromPlayerToMainPile(int $playerId)

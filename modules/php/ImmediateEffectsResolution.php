@@ -4,6 +4,7 @@ namespace Elementum;
 
 use Elementum;
 use Elementum\PlayerCrystals;
+use Elementum\SpellEffects\PlayTwoSpellsEffectContext;
 
 /**
  * Responsible for:
@@ -25,7 +26,8 @@ class ImmediateEffectsResolution
 
     private const IMMEDIATE_EFFECTS_NOT_REQUIRING_PLAYER_INPUT = [
         TAKE_CRYSTAL_SPELL_EFFECT_TYPE,
-        CRUSH_CRYSTALS_SPELL_EFFECT_TYPE
+        CRUSH_CRYSTALS_SPELL_EFFECT_TYPE,
+        PLAY_TWO_SPELLS_SPELL_EFFECT_TYPE
     ];
 
     /**
@@ -106,6 +108,9 @@ class ImmediateEffectsResolution
             PlayerCrystals::moveOneCrystalsFromAllPlayersBackToMainPile($allPlayerIds);
             self::spellResolvedFor($playerId);
             Notifications::notifyEveryoneLostCrystal();
+        } else if ($effectType === PLAY_TWO_SPELLS_SPELL_EFFECT_TYPE) {
+            PlayTwoSpellsEffectContext::rememberEffectPlayedBy($playerId);
+            self::spellResolvedFor($playerId);
         }
     }
 

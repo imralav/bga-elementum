@@ -23,6 +23,7 @@ require_once('modules/php/PlayerMoveChoices/PickedSpells.php');
 require_once('modules/php/PlayerMoveChoices/DraftChoices.php');
 require_once('modules/php/Spells/AddFromSpellPoolEffectContext.php');
 require_once('modules/php/Spells/ExchangeWithSpellPoolEffectContext.php');
+require_once('modules/php/Spells/PlayTwoSpellsEffectContext.php');
 require_once('modules/php/CrystalsOnSpells.php');
 
 use Elementum\PlayerCrystals;
@@ -37,6 +38,7 @@ use Elementum\SpellEffects\ExchangeWithSpellPoolEffectContext;
 use Elementum\Spells\Spell;
 use Elementum\Spells\SpellActivation;
 use Elementum\CrystalsOnSpells;
+use Elementum\SpellEffects\PlayTwoSpellsEffectContext;
 
 /**
  * TODO: fajne linki o typowaniu w PHP:
@@ -476,12 +478,11 @@ class Elementum extends Table
         $currentRound = $elementumGameLogic->incrementAndGetCurrentRound();
         $this->trace("=========== Preparing round " . $currentRound);
         if ($elementumGameLogic->isGameOver()) {
-            //TODO: go to scoring state, for now let's just end the game
             $this->gamestate->nextState('scoring');
         } else {
             $elementumGameLogic->prepareCurrentRound();
             Notifications::notifyPlayersAboutNewRound($currentRound);
-            $this->notifyPlayersAboutNewHandOfSpells($elementumGameLogic);
+            Notifications::notifyPlayersAboutNewHandOfSpells($elementumGameLogic);
             $this->gamestate->nextState('playersDraft');
         }
     }
@@ -503,8 +504,6 @@ class Elementum extends Table
          */
         $allSpellsPlayedThisTurn = $spellsPlayedPerPlayerFromSpellPool + $spellsPlayedPerPlayerFromHand;
         ImmediateEffectsResolution::rememberImmediateSpellsPlayedThisTurn($allSpellsPlayedThisTurn);
-        //4. TODO: przejście do statusu ustawiania power crystals
-        //5. przejście do sprawdzenia rundy
         $this->gamestate->nextState('resolveImmediateEffects');
     }
 
@@ -520,13 +519,6 @@ class Elementum extends Table
         }
     }
 
-    function st_placingPowerCrystals()
-    {
-        //TODO: implement as another set of private states
-        $this->debug("Placing power crystals on players boards");
-        $this->gamestate->nextState('checkRoundEnd');
-    }
-
     function st_checkRoundEndAndPassSpells()
     {
         $this->debug("Checking if the round has ended");
@@ -534,12 +526,16 @@ class Elementum extends Table
         if ($elementumGameLogic->havePlayersPlayedAllTheirSpells()) {
             $this->gamestate->nextState('nextRound');
         } else {
-            if (!$elementumGameLogic->wasExtraTurnSpellPlayed()) {
+            if ($elementumGameLogic->wasExtraTurnSpellPlayed()) {
+                Notifications::notifyAboutExtraTurn();
+                PlayTwoSpellsEffectContext::clear();
+                $this->gamestate->nextState('extraTurn');
+            } else {
                 $spellPassingOrder = $this->getSpellPassingOrder();
                 $elementumGameLogic->passSpells($spellPassingOrder);
-                $this->notifyPlayersAboutNewHandOfSpells($elementumGameLogic);
+                Notifications::notifyPlayersAboutNewHandOfSpells($elementumGameLogic);
+                $this->gamestate->nextState('passHand');
             }
-            $this->gamestate->nextState('passHand');
         }
     }
 
@@ -561,20 +557,11 @@ class Elementum extends Table
         $spellPassingOrder = $this->getNextPlayerTable();
         //TODO: in the future consider the direction of passing the spells
         // removing item with key 0 if present, as it is just the info about first player, we don't use it for passing spells
+        // TODO: remember that there is a card with immediate activation that changes the order of passing spells
         if (array_key_exists(0, $spellPassingOrder)) {
             unset($spellPassingOrder[0]);
         }
         return $spellPassingOrder;
-    }
-
-    private function notifyPlayersAboutNewHandOfSpells($elementumGameLogic)
-    {
-        $players = $this->loadPlayersBasicInfos();
-        foreach ($players as $player_id => $player) {
-            $newHand = $elementumGameLogic->getHandOf($player_id);
-            $newHand = array_values($newHand);
-            Notifications::notifyPlayerAboutNewHand($newHand, $player_id);
-        }
     }
 
     function st_scoring()
