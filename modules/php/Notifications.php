@@ -148,4 +148,12 @@ class Notifications
             Notifications::notifyPlayerAboutNewHand($newHand, $player_id);
         }
     }
+
+    /**
+     * @param array<int, array<int, int>> $scores map of player id to a map of spell number to score for given spell
+     */
+    public static function notifyPlayersAboutScore(array $scores)
+    {
+        Elementum::get()->notifyAllPlayers('score', 'Scores have been calculated', ['scores' => $scores]);
+    }
 }

@@ -64,13 +64,13 @@ if (!defined('ELEMENTUM_SPELLS')) {
 $this->spellsExcludedIn2PlayerGame = array(
   2,
   9,
-  13,
+  // 13, TODO: tymczasowo wyłączam, żeby sobie potestować scoring
   15,
   22,
   23,
   28,
   37,
-  38,
+  // 38, TODO: tymczasowo wyłączam, żeby sobie potestować scoring
   41,
   50,
   51

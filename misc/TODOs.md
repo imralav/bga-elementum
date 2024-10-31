@@ -8,43 +8,39 @@
 
 # Refactorings
 
-- Decide what to do with SQL access, active record or repository pattern?
-- Rethink frontend architecture, it might use some improvements.
-  - Example: register listener on card only once, and then react to clicks differently based on status, somewhere else
-- State pattern on frontend, state object updated on state enter/exit, state object has methods for each event, for example, how to react to a spell being clicked. When during spell picking state, it sends a request. Otherwise it is ignored
+- Decide what to do with SQL access, active record or repository pattern? (Recently I tend to favor global variables instead of custom database tables)
+- ElementumGameLogic turned out to be an unnecessary proxy. It should be split into smaller classes, dedicted to one task, like initiating game, tracking rounds and so on. Then it should be invoked directly from `elementum.game.php`. Or maybe command handler can be introduced, as most of the logic is related to state machine actions, and command handler seems like a good fit for it.
 
 # Ideas after studying GosuX
 
 1. More constants in material. State indexes, card indexes etc can be extracted to constants.
 
-# Checklist of spell effects
+# To do:
 
-## To do:
+0. Analyze scoring, see what new states are needed, whether they need to be taken during scoring, or can be done before scoring starts
 
-1. Immediate effects:
+   1.1. Analyze how to properly collect extra input for Spell 24
+
+1. Scoring
+
+2. Effects:
 
 - ChangeDraftOrderOrWinADrawSpellEffect: it's a special case, it's both immediate and scoring effect
-
-2. Using PSR-4 autoloading standard for PHP
+- Defense, card 26. It protects from negative effects, so need to add conditionality on all negative things like spell destruction and so on. Also add some indicator on UI.
+- Spell 51. Is it possible to choose the draw to win? Or is it first draw that happens?
 
 3. Game progression calculation
 
-4. Scoring
+4. 3 and 4 player versions with turn order change
 
-5. 3 and 4 player versions with turn order change
+5. Putting real images from publisher
 
-6. Putting real images from publisher
+6. Translations
 
-7. OverloadEffect: do it somewhere in the future, it's an optional mode
+7. Reasonable logs for future bug fixing
 
-## Done:
+8. Properly toggle clickability of spells on hand, board and in spell pool. Oftentimes they are clickable when they should not be. Use different effect for that. Right now spell get a bit bigger. Maybe add white shadow around them.
 
-### Immediate effects:
+9. There was some bug that after copying an immediate spell, target spell being "destroy spell", the destroyed spell moved up to despawn, but didn't disappear. It was a bug.
 
-- CrushCrystalsSpellEffect
-- TakeCrystalSpellEffect
-- DestroyCrystalSpellEffect
-- AddSpellFromSpellPool
-- CopyImmediateSpellEffect
-- exchangeWithSpellPoolEffect
-- playTwoSpellsEffect
+10. OverloadEffect: do it somewhere in the future, it's an optional mode

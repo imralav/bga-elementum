@@ -217,36 +217,53 @@ $machinestates = array(
         "transitions" => ['passHand' => 3, 'nextRound' => 2, 'extraTurn' => 3]
     ),
 
+
+    ///////////////////////////////////////////////////////////////////////////////
+    /////////// scoring and substates to collect extra input
+    ///////////
     8 => array(
-        "name" => "scoring",
-        "description" => "End scoring of the game",
+        "name" => "scoringExtraInputCheck",
+        "description" => "Checking if extra input is needed for scoring",
         "type" => "game",
-        "action" => "st_scoring",
-        "transitions" => ['end' => 99]
+        "action" => "stScoringCheckExtraInputNeeded",
+        "transitions" => ['noExtraInputNeeded' => 9, 'pickSpellToGetHalfThePoints' => 81, 'pickVirtualElementSources' => 82, 'pickSpellWithScoringActivationToCopy' => 83]
     ),
 
-    /*
-    Examples:
-    
-    2 => array(
-        "name" => "nextPlayer",
-        "description" => '',
-        "type" => "game",
-        "action" => "stNextPlayer",
-        "updateGameProgression" => true,   
-        "transitions" => array( "endGame" => 99, "nextPlayer" => 10 )
-    ),
-    
-    10 => array(
-        "name" => "playerTurn",
-        "description" => clienttranslate('${actplayer} must play a card or pass'),
-        "descriptionmyturn" => clienttranslate('${you} must play a card or pass'),
+    81 => array(
+        "name" => "pickSpellToGetHalfThePoints",
+        "description" => clienttranslate('${actplayer} is selecting a Spell'),
+        "descriptionmyturn" => clienttranslate('${you} must select a Spell'),
         "type" => "activeplayer",
-        "possibleactions" => array( "playCard", "pass" ),
-        "transitions" => array( "playCard" => 2, "pass" => 2 )
-    ), 
+        "possibleactions" => ["actPickSpellToGetHalfThePoints", "actDontPickSpellToGetHalfThePoints"],
+        "transitions" => ['spellPicked' => 8, 'spellNotPicked' => 8]
+    ),
 
-*/
+    82 => array(
+        "name" => "pickVirtualElementSources",
+        "description" => clienttranslate('${actplayer} is selecting Virtual Element sources'),
+        "descriptionmyturn" => clienttranslate('${you} can select up to 2 Virtual Element sources'),
+        "type" => "activeplayer",
+        "possibleactions" => ["actPickVirtualElementSources"],
+        "args" => "argPickVirtualElementSources",
+        "transitions" => ['sourcesPicked' => 8]
+    ),
+
+    83 => array(
+        "name" => "pickSpellWithScoringActivationToCopy",
+        "description" => clienttranslate('${actplayer} is selecting a Spell to copy'),
+        "descriptionmyturn" => clienttranslate('${you} must select a Spell to copy'),
+        "type" => "activeplayer",
+        "possibleactions" => ["actPickSpellWithScoringActivationToCopy", "actDontPickSpellWithScoringActivationToCopy"],
+        "transitions" => ['spellPicked' => 8, 'spellNotPicked' => 8]
+    ),
+
+    9 => array(
+        "name" => "scoring",
+        "description" => "Scoring the round",
+        "type" => "game",
+        "action" => "stScoring",
+        "transitions" => ['endGame' => 99]
+    ),
 
     // Final state.
     // Please do not modify (and do not overload action/args methods).

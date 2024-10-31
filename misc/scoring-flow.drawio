@@ -1,0 +1,47 @@
+<mxfile host="65bd71144e">
+    <diagram id="5BhtQSjoVeH6X9UFDME0" name="Page-1">
+        <mxGraphModel dx="2476" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="5" style="edgeStyle=none;html=1;" parent="1" source="2" target="3" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="if last round was played, go to scoring" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="5" vertex="1" connectable="0">
+                    <mxGeometry x="-0.2222" y="4" relative="1" as="geometry">
+                        <mxPoint x="27" y="-6" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="2" value="prepareCurrentRound" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="-10" y="220" width="170" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="9" style="edgeStyle=none;html=1;" edge="1" parent="1" source="3" target="8">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="collectExtraInput" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="425" y="220" width="170" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="game end" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                    <mxGeometry x="1310" y="220" width="170" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="&lt;h1&gt;Collecting extra input&lt;/h1&gt;&lt;div&gt;There are 4 spells that require extra input during scoring: 13, 24, 38&lt;span style=&quot;background-color: initial;&quot;&gt;. They are described in more detail in scoring.md.&lt;/span&gt;&lt;/div&gt;&lt;div&gt;This state, collectExtraInput, is responsible for:&lt;br&gt;1. Understanding if cards requiring extra input were played&lt;br&gt;2. Transitioning to different states to collect this extra input&lt;br&gt;3. Remembering which extra input has already been collected.&lt;br&gt;4. Transitioning to proper scoring state when all extra input is collected&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" parent="1" vertex="1">
+                    <mxGeometry x="360" y="290" width="320" height="260" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" style="edgeStyle=none;html=1;" edge="1" parent="1" source="8" target="4">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" value="start returning scoring in gamedatas" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="11">
+                    <mxGeometry x="-0.075" relative="1" as="geometry">
+                        <mxPoint x="12" y="-10" as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="8" value="scoring" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="820" y="220" width="170" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="10" value="&lt;h1&gt;Scoring&lt;/h1&gt;&lt;div&gt;Prepare a map of player id =&amp;gt; scoring result.&lt;/div&gt;&lt;div&gt;Scoring result is itself a map of spell number =&amp;gt; score.&lt;br&gt;&lt;br&gt;After score is calculated, it will be returned with all gamedatas. Frontend will animate showing it. Use Stone Age for inspiration on how it's done.&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+                    <mxGeometry x="810" y="290" width="240" height="200" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

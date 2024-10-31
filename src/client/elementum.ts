@@ -32,6 +32,7 @@ import { ExchangeWithSpellPoolSpellOnBoardSelectionState } from "./states/Exchan
 import { ExchangeWithSpellPoolSpellFromPoolSelectionState } from "./states/ExchangeWithSpellPoolSpellFromPoolSelectionState";
 import { PlacingPowerCrystalsState } from "./states/PlacingPowerCrystalsState";
 import { AddFromSpellPoolUniversalElementSpellDestinationState } from "./states/AddFromSpellPoolUniversalElementSpellDestinationState copy";
+import { PickVirtualElementSourcesState } from "./states/PickVirtualElementSourcesState";
 
 /** The root for all of your game code. */
 export class Elementum extends CommonMixer(Gamegui) {
@@ -126,6 +127,10 @@ export class Elementum extends CommonMixer(Gamegui) {
           this
         ),
       placingPowerCrystals: new PlacingPowerCrystalsState(this.gui, this),
+      pickVirtualElementSources: new PickVirtualElementSourcesState(
+        this,
+        this.gui
+      ),
     };
   }
 
@@ -142,12 +147,15 @@ export class Elementum extends CommonMixer(Gamegui) {
 
   /** @gameSpecific See {@link Gamegui.onEnteringState} for more information. */
   onEnteringState(stateName: GameStateName, args: CurrentStateArgs): void {
-    console.log("Entering state: " + stateName);
-    this.setStateBasedOnName(stateName);
+    console.log("Entering state: ", stateName, args);
+    this.setAndEnterStateBasedOnName(stateName, args);
   }
 
-  private setStateBasedOnName(stateName: GameStateName) {
-    this.getStateByName(stateName).onEnter();
+  private setAndEnterStateBasedOnName(
+    stateName: GameStateName,
+    args: CurrentStateArgs
+  ) {
+    this.getStateByName(stateName).onEnter(args);
   }
 
   setTextBeforeCancelButton(text: string) {

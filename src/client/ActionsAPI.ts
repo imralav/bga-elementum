@@ -174,4 +174,14 @@ export class ActionsAPI {
         throw new Error("Error placing power crystal");
       });
   }
+
+  public static async dontPickVirtualElementSources() {
+    return Elementum.getInstance()
+      .performAction("actPickVirtualElementSources", {
+        virtualElements: [],
+      })
+      .catch(() => {
+        throw new Error("Error cancelling virtual element sources");
+      });
+  }
 }

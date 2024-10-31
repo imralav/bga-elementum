@@ -3,7 +3,7 @@ import { Spell } from "../spells/Spell";
 import { State } from "./State";
 
 export class NoopState implements State {
-  onEnter(): void {}
+  onEnter(args: AnyGameStateArgs | null): void {}
   onUpdateActionButtons(args: AnyGameStateArgs | null): void {}
   spellOnHandClicked(spell: Spell): void {}
   spellOnBoardClicked(

@@ -25,6 +25,7 @@ require_once('modules/php/Spells/AddFromSpellPoolEffectContext.php');
 require_once('modules/php/Spells/ExchangeWithSpellPoolEffectContext.php');
 require_once('modules/php/Spells/PlayTwoSpellsEffectContext.php');
 require_once('modules/php/CrystalsOnSpells.php');
+require_once('modules/php/ScoringExtraInput.php');
 
 use Elementum\PlayerCrystals;
 use Elementum\PlayerMoveChoices\DraftChoices;
@@ -38,6 +39,8 @@ use Elementum\SpellEffects\ExchangeWithSpellPoolEffectContext;
 use Elementum\Spells\Spell;
 use Elementum\Spells\SpellActivation;
 use Elementum\CrystalsOnSpells;
+use Elementum\Scoring;
+use Elementum\ScoringExtraInput;
 use Elementum\SpellEffects\PlayTwoSpellsEffectContext;
 
 /**
@@ -463,8 +466,78 @@ class Elementum extends Table
     }
 
     //////////////////////////////////////////////////////////////////////////////
+    //////////// Actions for extra input collection before Scoring
+    ////////////
+    /**
+     * Selects a spell as a target of Spell 13. Half of the points of the selected spell will be added to the player's score.
+     * Selected spell must be a part of current player's board.
+     */
+    function actPickSpellToGetHalfThePoints(int $spellNumber)
+    {
+        $currentPlayerId = $this->getCurrentPlayerId();
+        $this->debug("Player $currentPlayerId picked a Spell to get half the points. Spell number: $spellNumber");
+        ScoringExtraInput::rememberSpellToGetHalfThePoints($currentPlayerId, $spellNumber);
+        $this->gamestate->nextState('spellPicked');
+    }
+
+    function actDontPickSpellToGetHalfThePoints()
+    {
+        $currentPlayerId = $this->getCurrentPlayerId();
+        $this->debug("Player $currentPlayerId decided to not pick a Spell to get half the points");
+        ScoringExtraInput::rememberSpellToGetHalfThePointsNotPicked($currentPlayerId);
+        $this->gamestate->nextState('spellNotPicked');
+    }
+
+    /**
+     * @param array<int, string> $virtualElements, map of spell number to element. Max 2 items in the array,
+     * as Spell 24 is limited to providing up to 2 virtual element sources.
+     * Selected spells must be part of current player's board.
+     * Player can chose to not pick any virtual element sources. Then the input array will be empty
+     */
+    function actPickVirtualElementSources(array $virtualElements)
+    {
+        $currentPlayerId = $this->getCurrentPlayerId();
+        $this->debug("Player $currentPlayerId picked Virtual Element sources");
+        if (empty($virtualElements)) {
+            ScoringExtraInput::rememberVirtualElementSourcesNotPicked($currentPlayerId);
+        } else {
+            ScoringExtraInput::rememberVirtualElementSources($currentPlayerId, $virtualElements);
+        }
+        $this->gamestate->nextState('sourcesPicked');
+    }
+
+    /**
+     * Selects a spell to copy its scoring activation. Selected spell can be a part of any board, but
+     * it must have SCORING activation type.
+     */
+    function actPickSpellWithScoringActivationToCopy(int $spellNumber)
+    {
+        $currentPlayerId = $this->getCurrentPlayerId();
+        $this->debug("Player $currentPlayerId picked a Spell to copy. Spell number: $spellNumber");
+        ScoringExtraInput::rememberSpellToCopy($currentPlayerId, $spellNumber);
+        $this->gamestate->nextState('spellPicked');
+    }
+
+    function actDontPickSpellWithScoringActivationToCopy()
+    {
+        $currentPlayerId = $this->getCurrentPlayerId();
+        $this->debug("Player $currentPlayerId decided to not pick a Spell to copy");
+        ScoringExtraInput::rememberSpellToCopyNotPicked($currentPlayerId);
+        $this->gamestate->nextState('spellNotPicked');
+    }
+
+    //////////////////////////////////////////////////////////////////////////////
     //////////// Game state arguments
     ////////////
+
+    function argPickVirtualElementSources()
+    {
+        $activePlayerId = $this->getActivePlayerId();
+        $elementumGameLogic = ElementumGameLogic::restoreFromDB();
+        return [
+            'virtualElements' => $elementumGameLogic->getVirtualElementSourcesFor($activePlayerId)
+        ];
+    }
 
 
     //////////////////////////////////////////////////////////////////////////////
@@ -564,50 +637,62 @@ class Elementum extends Table
         return $spellPassingOrder;
     }
 
-    function st_scoring()
+    function stScoringCheckExtraInputNeeded()
     {
-        $this->debug("End scoring of the game");
-        $this->gamestate->nextState('end');
+        $this->debug("Checking if any extra input is needed for scoring");
+        $elementumGameLogic = ElementumGameLogic::restoreFromDB();
+        $playerBoards = $elementumGameLogic->getPlayerBoards();
+        $scoringExtraInput = ScoringExtraInput::loadUnhandledSpells($playerBoards);
+        if ($scoringExtraInput->areThereAnyUnhandledSpells()) {
+            $scoringExtraInput->setupGameStateForNextExtraInputCollection();
+        } else {
+            $this->gamestate->nextState('noExtraInputNeeded');
+        }
+    }
+
+    function stScoring()
+    {
+        $this->debug("Scoring");
+        Scoring::calculateScores();
+        $score = Scoring::getScores();
+        Notifications::notifyPlayersAboutScore($score);
+        $this->gamestate->nextState('endGame');
     }
 
     //////////////////////////////////////////////////////////////////////////////
     //////////// Zombie
     ////////////
-
-    /*
-        zombieTurn:
-        
-        This method is called each time it is the turn of a player who has quit the game (= "zombie" player).
-        You can do whatever you want in order to make sure the turn of this player ends appropriately
-        (ex: pass).
-        
-        Important: your zombie code will be called when the player leaves the game. This action is triggered
-        from the main site and propagated to the gameserver from a server, not from a browser.
-        As a consequence, there is no current player associated to this action. In your zombieTurn function,
-        you must _never_ use getCurrentPlayerId() or getCurrentPlayerName(), otherwise it will fail with a "Not logged" error message. 
-    */
-
-    function zombieTurn(array $state, int $active_player)
+    /**
+     * This method is called each time it is the turn of a player who has quit the game (= "zombie" player).
+     * You can do whatever you want in order to make sure the turn of this player ends appropriately
+     * (ex: pass).
+     *
+     * Important: your zombie code will be called when the player leaves the game. This action is triggered
+     * from the main site and propagated to the gameserver from a server, not from a browser.
+     * As a consequence, there is no current player associated to this action. In your zombieTurn function,
+     * you must _never_ use `getCurrentPlayerId()` or `getCurrentPlayerName()`, otherwise it will fail with a
+     * "Not logged" error message.
+     *
+     * @param array{ type: string, name: string } $state
+     * @param int $active_player
+     * @return void
+     */
+    function zombieTurn(array $state, int $active_player): void
     {
         $statename = $state['name'];
-
         if ($state['type'] === "activeplayer") {
             switch ($statename) {
                 default:
                     $this->gamestate->nextState("zombiePass");
                     break;
             }
-
             return;
         }
-
         if ($state['type'] === "multipleactiveplayer") {
             // Make sure player is in a non blocking status for role turn
             $this->gamestate->setPlayerNonMultiactive($active_player, '');
-
             return;
         }
-
         throw new feException("Zombie mode not supported at this game state: " . $statename);
     }
 
@@ -625,7 +710,6 @@ class Elementum extends Table
         update the game database and allow the game to continue to run with your new version.
     
     */
-
     function upgradeTableDb($from_version)
     {
         // $from_version is the current version of this game database, in numerical form.

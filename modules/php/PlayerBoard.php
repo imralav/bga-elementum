@@ -101,4 +101,17 @@ class PlayerBoard extends  \APP_DbObject
         }
         $this->update();
     }
+
+
+    /**
+     * @return array<int> a list of all spell numbers on the board
+     */
+    public function getAllPlayedSpells(): array
+    {
+        $allSpells = array();
+        foreach ($this->board as $element => $spells) {
+            $allSpells = array_merge($allSpells, $spells);
+        }
+        return $allSpells;
+    }
 }

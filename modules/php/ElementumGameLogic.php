@@ -11,6 +11,7 @@ require_once('Notifications.php');
 require_once('Decks.php');
 require_once('Players.php');
 require_once('ImmediateEffectsResolution.php');
+require_once('VirtualElementSourcesFinder.php');
 
 use Elementum;
 use Elementum\Decks;
@@ -21,6 +22,7 @@ use Elementum\PlayerMoveChoices\SpellPoolChoiceResolverInput;
 use Elementum\Players;
 use Elementum\SpellEffects\PlayTwoSpellsEffectContext;
 use Elementum\Spells\Spell;
+use Elementum\VirtualElementSourcesFinder;
 
 class ElementumGameLogic
 {
@@ -63,17 +65,7 @@ class ElementumGameLogic
         $instance->createCrystalsPile();
         $instance->setFirstRound();
         $spellsFor2PlayerGame = $instance->exludeSpellsFor2PlayerGame(self::getBasicSpells());
-        // $instance->decks->populateSpellsDeckWith($spellsFor2PlayerGame);
-        //TODO: tymczasowo same immediate i 6 nieimmediate, póki się nimi zajmuję
-        $extraCounter = 0;
-        $allImmediateSpellsPlusSomeExtra = array_filter($spellsFor2PlayerGame, function ($spell) use (&$extraCounter) {
-            if (!$spell->isImmediate() && $extraCounter < 6) {
-                $extraCounter++;
-                return true;
-            }
-            return $spell->isImmediate();
-        });
-        $instance->decks->populateSpellsDeckWith($allImmediateSpellsPlusSomeExtra);
+        $instance->decks->populateSpellsDeckWith($spellsFor2PlayerGame);
         $instance->decks->shuffleSpellsInTheDeck();
         $instance->decks->drawElementSources();
         $instance->decks->drawSpellPool();
@@ -175,7 +167,7 @@ class ElementumGameLogic
         Elementum::get()->dump('Number of players:', $numberOfPlayers);
         Elementum::get()->dump('Players', $players);
         if ($this->isGameOver()) {
-            Elementum::get()->gamestate->nextState('scoring'); //TODO: move out of here, instead use return value to make decision outside
+            Elementum::get()->gamestate->nextState('scoring');
         }
         $cardsToGive = $this->getAmountOfCardsToGive($numberOfPlayers, $currentRound);
         foreach ($players as $player) {
@@ -402,5 +394,14 @@ class ElementumGameLogic
         $playerBoard->removeSpell($spellOnBoard->number);
         $playerBoard->putSpellOnBoardAtElement($spellFromPool->number, $element);
         Notifications::notifyPlayerReplacingSpellPoolCard($spellOnBoard, $spellFromPool, $playerId);
+    }
+
+    /**
+     * @return array<int, array<string>> map of spell numbers to a list of elements that are not met with natural element sources, so they could be filled with virtual ones
+     */
+    public function getVirtualElementSourcesFor(int $playerId)
+    {
+        $playerBoard = $this->playerBoards[$playerId];
+        return VirtualElementSourcesFinder::findIn($playerBoard);
     }
 }

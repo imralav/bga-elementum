@@ -70,6 +70,7 @@ declare global {
     actExchangeWithSpellPool_CancelElementDestinationChoice: string;
     actDontPlacePowerCrystal: string;
     actPlacePowerCrystal: string;
+    actPickVirtualElementSources: string;
   }
 
   type PlayerId = string;
