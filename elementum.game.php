@@ -25,6 +25,7 @@ require_once('modules/php/Spells/AddFromSpellPoolEffectContext.php');
 require_once('modules/php/Spells/ExchangeWithSpellPoolEffectContext.php');
 require_once('modules/php/Spells/PlayTwoSpellsEffectContext.php');
 require_once('modules/php/CrystalsOnSpells.php');
+require_once('modules/php/Scoring.php');
 require_once('modules/php/ScoringExtraInput.php');
 
 use Elementum\PlayerCrystals;
@@ -33,6 +34,7 @@ use Elementum\ElementumGameLogic;
 use Elementum\Notifications;
 use Elementum\PlayerMoveChoices\PickedSpells;
 use \Bga\GameFramework\Actions\CheckAction;
+use \Bga\GameFramework\Actions\Types\JsonParam;
 use Elementum\ImmediateEffectsResolution;
 use Elementum\SpellEffects\AddFromSpellPoolEffectContext;
 use Elementum\SpellEffects\ExchangeWithSpellPoolEffectContext;
@@ -282,11 +284,8 @@ class Elementum extends Table
     function actPickTargetElement(string $element)
     {
         $currentPlayerId = $this->getCurrentPlayerId();
-        // $pickedSpellNumber = PickedSpells::getPickedSpellOf($currentPlayerId);
-        // $pickedSpell = self::getSpellByNumber($pickedSpellNumber);
         DraftChoices::pickTargetElement($currentPlayerId, $element);
         $this->debug("Player picked target element. Element: $element, Player id: $currentPlayerId");
-        // $this->notifyPlayer($currentPlayerId, 'spellPlayedOnBoard', 'You played ${spellName} on your board', ['spellName' => $pickedSpell->name]);
         Notifications::notifyPlayerPickedAnElement($currentPlayerId, $element);
         $this->finishDraftForPlayer($currentPlayerId);
     }
@@ -494,10 +493,11 @@ class Elementum extends Table
      * Selected spells must be part of current player's board.
      * Player can chose to not pick any virtual element sources. Then the input array will be empty
      */
-    function actPickVirtualElementSources(array $virtualElements)
+    function actPickVirtualElementSources(#[JsonParam] array $virtualElements)
     {
         $currentPlayerId = $this->getCurrentPlayerId();
-        $this->debug("Player $currentPlayerId picked Virtual Element sources");
+        $this->debug("=============Player $currentPlayerId picked Virtual Element sources");
+        $this->dump("===============Picked virtual elements", $virtualElements);
         if (empty($virtualElements)) {
             ScoringExtraInput::rememberVirtualElementSourcesNotPicked($currentPlayerId);
         } else {

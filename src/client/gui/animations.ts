@@ -2,6 +2,8 @@ import { clone } from "dojo/_base/lang";
 import { Spell } from "../spells/Spell";
 import { Templates } from "../common/Templates";
 
+export const DEFAULT_ANIMATION_DURATION = 2000;
+
 /**
  * Taken from VictoriaLa's codepen: https://codepen.io/VictoriaLa/pen/gORvdJo
  * This function is used to clone an element on the animation surface
@@ -82,7 +84,7 @@ function cloneOnAnimationSurface(idOfElementToClone: string, postfix: string) {
 export function moveElementOnAnimationSurface(
   elementToMoveId: string,
   newParentId: string,
-  durationInMs: number = 1000
+  durationInMs: number = DEFAULT_ANIMATION_DURATION / 2
 ) {
   var elementToMove = $(elementToMoveId) as HTMLElement;
   var newParent = $(newParentId) as HTMLElement;
@@ -121,7 +123,10 @@ export function moveElementOnAnimationSurface(
   });
 }
 
-export function despawnElement(elementId: string, durationInMs: number = 2000) {
+export function despawnElement(
+  elementId: string,
+  durationInMs: number = DEFAULT_ANIMATION_DURATION
+) {
   return moveElementOnAnimationSurface(
     elementId,
     "cards-spawn-point",
@@ -131,7 +136,7 @@ export function despawnElement(elementId: string, durationInMs: number = 2000) {
 
 export function despawnSpell(
   spellNumber: Spell["number"],
-  durationInMs: number = 2000
+  durationInMs: number = DEFAULT_ANIMATION_DURATION
 ) {
   const spellNodeId = Templates.idOfSpellByNumber(spellNumber);
   return despawnElement(spellNodeId, durationInMs);

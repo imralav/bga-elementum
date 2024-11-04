@@ -102,9 +102,6 @@ class VirtualElementSourcesFinder
             $nextElementSpellsNumbers = $this->playerBoard->board[$nextElementSource];
             $previousElementSource = $elementSources[$index - 1] ?? $elementSources[count($elementSources) - 1];
             $previousElementSpellsNumbers = $this->playerBoard->board[$previousElementSource];
-            Elementum::get()->dump("=============building context for element source", $currentElementSource);
-            Elementum::get()->dump("=============next element source", $nextElementSource);
-            Elementum::get()->dump("=============previous element source", $previousElementSource);
             $context = new ElementSourceAndNeighbours($currentElementSpellsNumbers, $nextElementSpellsNumbers, $previousElementSpellsNumbers);
             $callback($context);
         }

@@ -62,4 +62,14 @@ export class Templates {
               <span>Current round: <span id="current-round">0</span>/<span id="total-rounds">3</span></span>
             </div>`;
   }
+
+  static virtualElementSourcesContainer() {
+    return `<div class="virtual-element-sources-container"></div>`;
+  }
+
+  static virtualElementSource(element: Element) {
+    return `<div class="virtual-element-source ${element}">
+              ${getIconForElement(element)}
+            </div>`;
+  }
 }

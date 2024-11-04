@@ -1,4 +1,9 @@
-export function announce(message: string, durationInMs: number = 1000) {
+import { DEFAULT_ANIMATION_DURATION } from "./animations";
+
+export function announce(
+  message: string,
+  durationInMs: number = DEFAULT_ANIMATION_DURATION
+) {
   const announcementElement = document.getElementById("announcement");
   if (!announcementElement) {
     console.error("Could not find announcement element");

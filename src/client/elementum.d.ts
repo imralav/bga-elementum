@@ -9,14 +9,48 @@
  */
 
 import { Spell } from "./spells/Spell";
-import { ElementSource } from "./spells/elementum.types";
+import { Element, ElementSource } from "./spells/elementum.types";
 
 // If you have any imports/exports in this file, 'declare global' is access/merge your game specific types with framework types. 'export {};' is used to avoid possible confusion with imports/exports.
 declare global {
   /** @gameSpecific Add game specific notifications / arguments here. See {@link NotifTypes} for more information. */
   interface NotifTypes {
     // [name: string]: any; // Uncomment to remove type safety on notification names and arguments
+    spellPlayedOnBoard: {
+      player_id: PlayerId;
+      spell: Spell;
+      element: Element;
+    };
+    newHand: { newHand: Spell[] };
+    newSpellPoolCard: { newSpellNumber: Spell["number"] };
+    youPaidCrystalForSpellPool: null;
+    otherPlayerPaidCrystalForSpellPool: { playerId: PlayerId };
+    newRound: { round: number };
+    elementPicked: null;
+    playerTookCrystal: { playerId: PlayerId };
+    everyoneLostCrystal: null;
+    playerDestroyedSpell: {
+      victimPlayerId: PlayerId;
+      spellNumber: Spell["number"];
+    };
+    playerAddedSpellFromPool: {
+      playerId: PlayerId;
+      spellNumber: Spell["number"];
+      element: Element;
+    };
+    exchangedSpellWithPool: {
+      playerId: PlayerId;
+      spellNumber: Spell["number"];
+      spellPoolNumber: Spell["number"];
+      element: Element;
+    };
+    playerPlacedPowerCrystal: {
+      playerId: PlayerId;
+      spellNumber: Spell["number"];
+    };
+    extraTurn: null;
   }
+
   type PlayerBoardAndElementSources = {
     elementSources: ElementSource["type"][];
     board: Record<ElementSource["type"], Spell["number"][]>;
@@ -42,10 +76,32 @@ declare global {
   // When gamestates.jsonc is enabled in the config, the following types are automatically generated. And you should not add to anything to 'GameStates' or 'PlayerActions'. If gamestates.jsonc is enabled, 'GameStates' and 'PlayerActions' can be removed from this file.
   //
 
+  type VirtualElementsCandidates = {
+    [spellNumber: number]: Element[];
+  };
+
   interface GameStates {
     // [id: number]: string | { name: string, argsType: object} | any; // Uncomment to remove type safety with ids, names, and arguments for game states
-    "-1": "dummmy"; // Added so 'dummy' case in examples can compile.
+    "-1": "noop"; // Added so 'dummy' case in examples can compile.
     1: "gameSetup";
+    3: "playersDraft";
+    31: "spellChoice";
+    32: "spellDestinationChoice";
+    33: "universalElementSpellDestination";
+    51: "destroyTargetSelection";
+    52: "addFromSpellPool_spellSelection";
+    53: "addFromSpellPool_universalElementSpellDestination";
+    54: "copyImmediateSpell_spellSelection";
+    55: "exchangeWithSpellPool_spellOnBoardSelection";
+    56: "exchangeWithSpellPool_spellFromSpellPoolSelection";
+    57: "exchangeWithSpellPool_universalElementSpellDestination";
+    6: "placingPowerCrystals";
+    82: {
+      name: "pickVirtualElementSources";
+      argsType: {
+        virtualElements: VirtualElementsCandidates;
+      };
+    };
     99: { name: "gameEnd"; argsType: {} };
   }
 

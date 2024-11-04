@@ -93,6 +93,39 @@ div.element-source div.crystals {
   right: 20px;
   position: absolute;
 }
+div.spell div.virtual-element-sources-container,
+div.element-source div.virtual-element-sources-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+div.spell div.virtual-element-sources-container div.virtual-element-source,
+div.element-source div.virtual-element-sources-container div.virtual-element-source {
+  flex-basis: 40%;
+  height: 64px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+div.spell div.virtual-element-sources-container div.virtual-element-source:hover,
+div.element-source div.virtual-element-sources-container div.virtual-element-source:hover {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+div.spell div.virtual-element-sources-container div.virtual-element-source.selected,
+div.element-source div.virtual-element-sources-container div.virtual-element-source.selected {
+  background-color: rgba(200, 255, 200, 0.5);
+}
+div.spell div.virtual-element-sources-container div.virtual-element-source.selected:hover,
+div.element-source div.virtual-element-sources-container div.virtual-element-source.selected:hover {
+  background-color: rgba(200, 255, 200, 0.8);
+}
 
 div.element-source {
   height: 24px;

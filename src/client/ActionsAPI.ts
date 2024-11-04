@@ -178,10 +178,22 @@ export class ActionsAPI {
   public static async dontPickVirtualElementSources() {
     return Elementum.getInstance()
       .performAction("actPickVirtualElementSources", {
-        virtualElements: [],
+        virtualElements: JSON.stringify({}),
       })
       .catch(() => {
         throw new Error("Error cancelling virtual element sources");
+      });
+  }
+
+  public static async actPickVirtualElementSources(
+    virtualElements: VirtualElementsCandidates
+  ) {
+    return Elementum.getInstance()
+      .performAction("actPickVirtualElementSources", {
+        virtualElements: JSON.stringify(virtualElements),
+      })
+      .catch(() => {
+        throw new Error("Error picking virtual element sources");
       });
   }
 }

@@ -7,12 +7,14 @@ use Elementum;
 class ScoringExtraInput
 {
     private const UNHANDLED_SPELLS_KEY = 'unhandledSpells';
+    private const VIRTUAL_ELEMENTS_KEY = 'virtualElements';
 
     /**
      * @var array<string> list of spell effect types that require extra input
      */
     private const SPELLS_THAT_REQUIRE_EXTRA_INPUT = [ELEMENTUM_FROM_OTHER_SPELL_SPELL_EFFECT_TYPE, VIRTUAL_ELEMENT_SOURCES_SPELL_EFFECT_TYPE, COPY_NON_IMMEDIATE_SPELL_SPELL_EFFECT_TYPE];
 
+    //TODO: it's weird that most operations are static, but there is still some instance field
     /**
      * @param array<int, int[]> $unhandledSpells map of player id to a list of spell numbers that need extra input
      */
@@ -119,9 +121,37 @@ class ScoringExtraInput
     /**
      * @param array<int, string> $virtualElements, map of spell number to element
      */
-    public static function rememberVirtualElementSources(int $playerId, array $virtualElements) {}
+    public static function rememberVirtualElementSources(int $playerId, array $virtualElements)
+    {
+        self::handleVirtualElementSourcesSpell($playerId);
+        self::saveSelectedVirtualElementSources($virtualElements);
+    }
 
-    public static function rememberVirtualElementSourcesNotPicked(int $playerId) {}
+    /**
+     * @param array<int, string> $virtualElements, map of spell number to element
+     */
+    public static function saveSelectedVirtualElementSources(array $virtualElements)
+    {
+        Elementum::get()->globals->set(self::VIRTUAL_ELEMENTS_KEY, $virtualElements);
+    }
+
+    public static function rememberVirtualElementSourcesNotPicked(int $playerId)
+    {
+        self::handleVirtualElementSourcesSpell($playerId);
+    }
+
+    public static function handleVirtualElementSourcesSpell(int $playerId)
+    {
+        $unhandledSpells = self::getUnhandledSpells();
+        $unhandledSpells[$playerId] = array_values(array_filter($unhandledSpells[$playerId], function ($spellNumber) {
+            $spell = Elementum::get()->getSpellByNumber($spellNumber);
+            return $spell->effect->type != VIRTUAL_ELEMENT_SOURCES_SPELL_EFFECT_TYPE;
+        }));
+        if (empty($unhandledSpells[$playerId])) {
+            unset($unhandledSpells[$playerId]);
+        }
+        self::saveUnhandledSpells($unhandledSpells);
+    }
 
     public static function rememberSpellToCopy(int $playerId, int $spellNumber) {}
 

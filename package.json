@@ -5,7 +5,7 @@
     "watch": "npx bga-build --watch"
   },
   "dependencies": {
-    "bga-ts-template": "^1.1.8",
+    "bga-ts-template": "^1.1.10",
     "typescript": "^5.4.5"
   }
 }

@@ -56,6 +56,39 @@ div.element-source {
     right: 20px;
     position: absolute;
   }
+
+  div.virtual-element-sources-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+
+    div.virtual-element-source {
+      flex-basis: 40%;
+      height: 64px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(255, 255, 255, 0.5);
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.8);
+      }
+
+      &.selected {
+        background-color: rgba(200, 255, 200, 0.5);
+
+        &:hover {
+          background-color: rgba(200, 255, 200, 0.8);
+        }
+      }
+    }
+  }
 }
 
 div.element-source {

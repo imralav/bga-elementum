@@ -21,7 +21,6 @@ import { Templates } from "./common/Templates";
 import { onNotification } from "./Notifications";
 import { PlayersDraftState } from "./states/PlayersDraftState";
 import { GameInfoPanel } from "./gui/GameInfoPanel";
-import { Element } from "./spells/elementum.types";
 import { UniversalElementDestinationChoiceState } from "./states/UniversalElementDestinationChoiceState";
 import { announce } from "./gui/Announcement";
 import { DestroyTargetSelectionState } from "./states/DestroyTargetSelectionState";
@@ -41,7 +40,7 @@ export class Elementum extends CommonMixer(Gamegui) {
   private gui!: ElementumGameInterface;
   private static instance: Elementum;
   private allSpells: Spell[] = [];
-  private states: Record<string, State> = {};
+  private states!: Partial<Record<GameStateName, State>>;
 
   static getInstance() {
     return Elementum.instance;
@@ -83,7 +82,7 @@ export class Elementum extends CommonMixer(Gamegui) {
     });
     this.createStates();
     GameInfoPanel.updateCurrentRound(gamedatas.currentRound);
-    announce("Current round: " + gamedatas.currentRound + "/3", 2000);
+    announce("Current round: " + gamedatas.currentRound + "/3");
   }
 
   private getCurrentStateName() {
@@ -127,10 +126,7 @@ export class Elementum extends CommonMixer(Gamegui) {
           this
         ),
       placingPowerCrystals: new PlacingPowerCrystalsState(this.gui, this),
-      pickVirtualElementSources: new PickVirtualElementSourcesState(
-        this,
-        this.gui
-      ),
+      pickVirtualElementSources: new PickVirtualElementSourcesState(this),
     };
   }
 
@@ -201,80 +197,70 @@ export class Elementum extends CommonMixer(Gamegui) {
 
   /** @gameSpecific See {@link Gamegui.setupNotifications} for more information. */
   setupNotifications() {
-    onNotification("spellPlayedOnBoard").do((notification: Notif) => {
-      const playerId = notification.args!.player_id as PlayerId;
-      const spell = notification.args!.spell as Spell;
-      const element = notification.args!.element as Element;
+    onNotification("spellPlayedOnBoard").do((notification) => {
+      const { player_id: playerId, spell, element } = notification.args!;
       this.gui.putSpellOnBoard(playerId, spell, element);
     });
-    onNotification("newHand").do((notification: Notif) => {
-      this.gui.replaceHand(notification.args!.newHand as Spell[]);
+    onNotification("newHand").do((notification) => {
+      this.gui.replaceHand(notification.args!.newHand);
     });
-    onNotification("newSpellPoolCard").do((notification: Notif) => {
-      const newSpellNumber = notification.args!
-        .newSpellNumber as Spell["number"];
+    onNotification("newSpellPoolCard").do((notification) => {
+      const newSpellNumber = notification.args!.newSpellNumber;
       this.gui.putSpellInSpellPool(newSpellNumber);
     });
-    onNotification("youPaidCrystalForSpellPool").do((notification: Notif) => {
+    onNotification("youPaidCrystalForSpellPool").do(() => {
       this.gui.crystals.moveCrystalFromPlayerToPile(
         this.getCurrentPlayerId().toString()
       );
     });
-    onNotification("otherPlayerPaidCrystalForSpellPool").do(
-      (notification: Notif) => {
-        this.gui.crystals.moveCrystalFromPlayerToPile(
-          notification.args!.playerId as PlayerId
-        );
-      }
-    );
-    onNotification("newRound").do((notification: Notif) => {
-      const round = notification.args!.round as number;
+    onNotification("otherPlayerPaidCrystalForSpellPool").do((notification) => {
+      this.gui.crystals.moveCrystalFromPlayerToPile(
+        notification.args!.playerId
+      );
+    });
+    onNotification("newRound").do((notification) => {
+      const round = notification.args!.round;
       GameInfoPanel.updateCurrentRound(round);
-      announce("Round " + round + " started", 2000);
+      announce("Round " + round + " started");
     });
     onNotification("elementPicked").do(() => {
       this.gui.makeElementSourcesNotClickableForCurrentPlayer();
     });
-    onNotification("playerTookCrystal").do((notification: Notif) => {
-      const playerId = notification.args!.playerId as PlayerId;
+    onNotification("playerTookCrystal").do((notification) => {
+      const playerId = notification.args!.playerId;
       this.gui.crystals.moveCrystalFromPileToPlayer(playerId);
     });
     onNotification("everyoneLostCrystal").do(() => {
       this.gui.crystals.moveCrystalFromAllPlayersToPile();
     });
-    onNotification("playerDestroyedSpell").do((notification: Notif) => {
-      console.log("Spell destroyed", notification.args);
-      const victimPlayerId = notification.args!.victimPlayerId as PlayerId;
-      const spellNumber = notification.args!.spellNumber as Spell["number"];
-      this.gui.destroySpellOnBoard(victimPlayerId, spellNumber);
-    });
-    onNotification("playerAddedSpellFromPool").do((notification: Notif) => {
+    onNotification("playerDestroyedSpell").do(
+      (notification: NotifAs<"playerDestroyedSpell">) => {
+        console.log("Spell destroyed", notification.args);
+        const { victimPlayerId, spellNumber } = notification.args!;
+        this.gui.destroySpellOnBoard(victimPlayerId, spellNumber);
+      }
+    );
+    onNotification("playerAddedSpellFromPool").do((notification) => {
       console.log("Spell added from spell pool", notification.args);
-      const playerId = notification.args!.playerId as PlayerId;
-      const spellNumber = notification.args!.spellNumber as Spell["number"];
-      const element = notification.args!.element as Element;
+      const { playerId, spellNumber, element } = notification.args!;
       const spell = this.getSpellByNumber(spellNumber);
       this.gui.putSpellOnBoard(playerId, spell!, element);
     });
-    onNotification("exchangedSpellWithPool").do((notification: Notif) => {
+    onNotification("exchangedSpellWithPool").do((notification) => {
       console.log("Spell exchanged with pool", notification.args);
-      const playerId = notification.args!.playerId as PlayerId;
-      const spellNumber = notification.args!.spellNumber as Spell["number"];
-      const spellPoolNumber = notification.args!
-        .spellPoolNumber as Spell["number"];
-      const element = notification.args!.element as Element;
+      const { playerId, spellNumber, spellPoolNumber, element } =
+        notification.args!;
       const spellFromPool = this.getSpellByNumber(spellPoolNumber);
       this.gui.crystals.moveAllCrystalsFromSpellToPile(spellNumber);
       this.gui.putSpellOnBoard(playerId, spellFromPool!, element);
       this.gui.putSpellInSpellPool(spellNumber);
     });
-    onNotification("playerPlacedPowerCrystal").do((notification: Notif) => {
-      const playerId = notification.args!.playerId as PlayerId;
-      const spellNumber = notification.args!.spellNumber as Spell["number"];
+    onNotification("playerPlacedPowerCrystal").do((notification) => {
+      const { playerId, spellNumber } = notification.args!;
       this.gui.crystals.moveCrystalFromPlayerToSpell(playerId, spellNumber);
     });
     onNotification("extraTurn").do(() => {
-      announce("Extra turn! You can play another spell.", 2000);
+      announce("Extra turn! You can play another spell.");
     });
   }
 
@@ -305,7 +291,7 @@ export class Elementum extends CommonMixer(Gamegui) {
         "/" + this.game_name + "/" + this.game_name + "/" + action + ".html",
         args,
         this,
-        (_) => {},
+        (_: any) => {},
         (error) => {
           if (error) {
             console.error("Error performing action", action, args);
