@@ -11,9 +11,7 @@ export class Templates {
       spellNumber: spell.number,
       spellSummaryData: `${getIconForElement(spell.element)} ${spell.number}: ${
         spell.name
-      }\n(${
-        spell.spellActivation === "immediate" ? "immediate" : "passive"
-      })(C:${spell.crystalSlots})\n`,
+      }\n(${spell.spellActivation})(C:${spell.crystalSlots})\n`,
       effect: JSON.stringify(spell.effect, null, 2),
       empoweredEffect: spell.empoweredEffect
         ? JSON.stringify(spell.empoweredEffect, null, 2)

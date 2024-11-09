@@ -27,6 +27,7 @@ require_once('modules/php/Spells/PlayTwoSpellsEffectContext.php');
 require_once('modules/php/CrystalsOnSpells.php');
 require_once('modules/php/Scoring.php');
 require_once('modules/php/ScoringExtraInput.php');
+require_once('modules/php/Empowerment.php');
 
 use Elementum\PlayerCrystals;
 use Elementum\PlayerMoveChoices\DraftChoices;
@@ -308,6 +309,7 @@ class Elementum extends Table
 
     private function clearCrystalsFromDestroyedSpell(int $spellNumber)
     {
+        //TODO: why weren't the crystals cleared correctly? Frontend was still receiving info, that destroyed spell has some crystals on it.
         $crystalsToMove = CrystalsOnSpells::getCrystalsOnSpell($spellNumber);
         CrystalsOnSpells::removeAllCrystalsOnSpell($spellNumber);
         PlayerCrystals::moveCrystalsFromSpellsToPile($crystalsToMove);
@@ -470,9 +472,11 @@ class Elementum extends Table
     /**
      * Selects a spell as a target of Spell 13. Half of the points of the selected spell will be added to the player's score.
      * Selected spell must be a part of current player's board.
+     * Works only when empowered.
      */
     function actPickSpellToGetHalfThePoints(int $spellNumber)
     {
+        //TODO: validate selected spell is on current player's board
         $currentPlayerId = $this->getCurrentPlayerId();
         $this->debug("Player $currentPlayerId picked a Spell to get half the points. Spell number: $spellNumber");
         ScoringExtraInput::rememberSpellToGetHalfThePoints($currentPlayerId, $spellNumber);
@@ -539,6 +543,19 @@ class Elementum extends Table
         ];
     }
 
+
+    function argPickSpellWithScoringActivationToCopy()
+    {
+        $activePlayerId = $this->getActivePlayerId();
+        $elementumGameLogic = ElementumGameLogic::restoreFromDB();
+        $playerBoards = $elementumGameLogic->getPlayerBoards();
+        $scoringSpells = array_filter($playerBoards[$activePlayerId]->board, function ($spellNumber) {
+            return self::getSpellByNumber($spellNumber)->spellActivation == SpellActivation::SCORING;
+        });
+        return [
+            'scoringSpells' => $scoringSpells
+        ];
+    }
 
     //////////////////////////////////////////////////////////////////////////////
     //////////// Game state actions

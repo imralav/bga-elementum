@@ -3,18 +3,21 @@
 namespace Elementum;
 
 use Elementum;
+use Elementum\Spells\Spell;
 
 class ScoringExtraInput
 {
     private const UNHANDLED_SPELLS_KEY = 'unhandledSpells';
     private const VIRTUAL_ELEMENTS_KEY = 'virtualElements';
+    private const ELEMENTUM_FROM_OTHER_SPELL_KEY = 'elementumFromOtherSpell';
 
     /**
      * @var array<string> list of spell effect types that require extra input
      */
     private const SPELLS_THAT_REQUIRE_EXTRA_INPUT = [ELEMENTUM_FROM_OTHER_SPELL_SPELL_EFFECT_TYPE, VIRTUAL_ELEMENT_SOURCES_SPELL_EFFECT_TYPE, COPY_NON_IMMEDIATE_SPELL_SPELL_EFFECT_TYPE];
 
-    //TODO: it's weird that most operations are static, but there is still some instance field
+    //TODO: it's weird that most operations are static, but there is still an instance field and some instance operations.
+    //TODO: Rething it.
     /**
      * @param array<int, int[]> $unhandledSpells map of player id to a list of spell numbers that need extra input
      */
@@ -34,12 +37,11 @@ class ScoringExtraInput
     public static function loadUnhandledSpells(array $playerBoards): ScoringExtraInput
     {
         $unhandledSpells = self::getUnhandledSpells();
-        Elementum::get()->dump("=============unhandled spells", $unhandledSpells);
         if ($unhandledSpells === null) {
-            $unhandledSpells = self::extractSpellsPlayedPerPlayerThatNeedExtraInput($playerBoards);
-            Elementum::get()->dump("=============unhandled spells after extraction", $unhandledSpells);
+            $unhandledSpells = self::extractSpellsThatNeedExtraInput($playerBoards);
             self::saveUnhandledSpells($unhandledSpells);
         }
+        Elementum::get()->dump("=============unhandled spells", $unhandledSpells);
         return new ScoringExtraInput($unhandledSpells);
     }
 
@@ -63,7 +65,7 @@ class ScoringExtraInput
      * @param array<int,PlayerBoard> $playerBoards
      * @return array<int, int[]> map of player id to a list of spell numbers that need extra input
      */
-    private static function extractSpellsPlayedPerPlayerThatNeedExtraInput(array $playerBoards): array
+    private static function extractSpellsThatNeedExtraInput(array $playerBoards): array
     {
         $spellsPlayedPerPlayer = [];
         foreach ($playerBoards as $playerId => $playerBoard) {
@@ -71,7 +73,10 @@ class ScoringExtraInput
             Elementum::get()->dump("=============all spells for player $playerId", $allSpellsForPlayer);
             $filteredSpells = array_values(array_filter($allSpellsForPlayer, function ($spell) {
                 $spell = Elementum::get()->getSpellByNumber($spell);
-                return in_array($spell->effect->type, self::SPELLS_THAT_REQUIRE_EXTRA_INPUT);
+                if (!self::spellRequiresExtraInput($spell)) {
+                    return false;
+                }
+                return self::extraConditionsMet($spell);
             }));
             if (empty($filteredSpells)) {
                 continue;
@@ -79,6 +84,22 @@ class ScoringExtraInput
             $spellsPlayedPerPlayer[$playerId] = $filteredSpells;
         }
         return $spellsPlayedPerPlayer;
+    }
+
+    private static function spellRequiresExtraInput(Spell $spell): bool
+    {
+        return in_array($spell->effect->type, self::SPELLS_THAT_REQUIRE_EXTRA_INPUT);
+    }
+
+    private static function extraConditionsMet(Spell $spell): bool
+    {
+        switch ($spell->effect->type) {
+            case ELEMENTUM_FROM_OTHER_SPELL_SPELL_EFFECT_TYPE:
+                $isEmpowered = Empowerment::isSpellEmpowered($spell);
+                return $isEmpowered;
+            default:
+                return true;
+        }
     }
 
     public function areThereAnyUnhandledSpells()
@@ -114,16 +135,41 @@ class ScoringExtraInput
         }
     }
 
-    public static function rememberSpellToGetHalfThePoints(int $playerId, int $spellNumber) {}
+    public static function rememberSpellToGetHalfThePoints(int $playerId, int $spellNumber)
+    {
+        self::spellHandled($playerId, ELEMENTUM_FROM_OTHER_SPELL_SPELL_EFFECT_TYPE);
+        self::saveSelectedSpellToGetPointsFrom($spellNumber);
+    }
 
-    public static function rememberSpellToGetHalfThePointsNotPicked(int $playerId) {}
+    private static function spellHandled(int $playerId, string $effectType)
+    {
+        $unhandledSpells = self::getUnhandledSpells();
+        $unhandledSpells[$playerId] = array_values(array_filter($unhandledSpells[$playerId], function ($spellNumber) use ($effectType) {
+            $spell = Elementum::get()->getSpellByNumber($spellNumber);
+            return $spell->effect->type != $effectType;
+        }));
+        if (empty($unhandledSpells[$playerId])) {
+            unset($unhandledSpells[$playerId]);
+        }
+        self::saveUnhandledSpells($unhandledSpells);
+    }
+
+    private static function saveSelectedSpellToGetPointsFrom(int $spellNumber)
+    {
+        Elementum::get()->globals->set(self::ELEMENTUM_FROM_OTHER_SPELL_KEY, $spellNumber);
+    }
+
+    public static function rememberSpellToGetHalfThePointsNotPicked(int $playerId)
+    {
+        self::spellHandled($playerId, ELEMENTUM_FROM_OTHER_SPELL_SPELL_EFFECT_TYPE);
+    }
 
     /**
      * @param array<int, string> $virtualElements, map of spell number to element
      */
     public static function rememberVirtualElementSources(int $playerId, array $virtualElements)
     {
-        self::handleVirtualElementSourcesSpell($playerId);
+        self::spellHandled($playerId, VIRTUAL_ELEMENT_SOURCES_SPELL_EFFECT_TYPE);
         self::saveSelectedVirtualElementSources($virtualElements);
     }
 
@@ -137,20 +183,7 @@ class ScoringExtraInput
 
     public static function rememberVirtualElementSourcesNotPicked(int $playerId)
     {
-        self::handleVirtualElementSourcesSpell($playerId);
-    }
-
-    public static function handleVirtualElementSourcesSpell(int $playerId)
-    {
-        $unhandledSpells = self::getUnhandledSpells();
-        $unhandledSpells[$playerId] = array_values(array_filter($unhandledSpells[$playerId], function ($spellNumber) {
-            $spell = Elementum::get()->getSpellByNumber($spellNumber);
-            return $spell->effect->type != VIRTUAL_ELEMENT_SOURCES_SPELL_EFFECT_TYPE;
-        }));
-        if (empty($unhandledSpells[$playerId])) {
-            unset($unhandledSpells[$playerId]);
-        }
-        self::saveUnhandledSpells($unhandledSpells);
+        self::spellHandled($playerId, VIRTUAL_ELEMENT_SOURCES_SPELL_EFFECT_TYPE);
     }
 
     public static function rememberSpellToCopy(int $playerId, int $spellNumber) {}

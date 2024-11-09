@@ -274,7 +274,7 @@ define("src/client/common/Templates", ["require", "exports", "bgagame/elementum"
         Templates.spell = function (spell) {
             return elementum_1.Elementum.getInstance().format_block("jstpl_spell", {
                 spellNumber: spell.number,
-                spellSummaryData: "".concat((0, utils_1.getIconForElement)(spell.element), " ").concat(spell.number, ": ").concat(spell.name, "\n(").concat(spell.spellActivation === "immediate" ? "immediate" : "passive", ")(C:").concat(spell.crystalSlots, ")\n"),
+                spellSummaryData: "".concat((0, utils_1.getIconForElement)(spell.element), " ").concat(spell.number, ": ").concat(spell.name, "\n(").concat(spell.spellActivation, ")(C:").concat(spell.crystalSlots, ")\n"),
                 effect: JSON.stringify(spell.effect, null, 2),
                 empoweredEffect: spell.empoweredEffect
                     ? JSON.stringify(spell.empoweredEffect, null, 2)
@@ -369,7 +369,12 @@ define("src/client/gui/Crystals", ["require", "exports", "ebg/zone", "src/client
             });
         };
         Crystals.prototype.createCrystalPileForSpell = function (spellNumber) {
+            debugger;
             var crystalsPile = Templates_1.Templates.idOfCrystalsForSpell(spellNumber);
+            if (!$(crystalsPile)) {
+                console.error("Element not found", crystalsPile);
+                return;
+            }
             var pileInDom = $(crystalsPile);
             var crystalsPileZone = new Zone();
             crystalsPileZone.create(this.core, pileInDom, Crystals.CRYSTAL_SIZE, Crystals.CRYSTAL_SIZE);

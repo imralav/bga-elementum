@@ -10,6 +10,7 @@ enum SpellActivation: string
 {
     case IMMEDIATE = 'immediate';
     case PASSIVE = 'passive';
+    case SCORING = 'scoring';
     //TODO: consider including scoring and specials that happen all the time
 }
 
@@ -54,5 +55,10 @@ class Spell
     public function isImmediate()
     {
         return $this->spellActivation === SpellActivation::IMMEDIATE;
+    }
+
+    public function canBeEmpowered()
+    {
+        return $this->empoweredEffect !== null;
     }
 }

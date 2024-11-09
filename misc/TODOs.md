@@ -17,13 +17,15 @@
 
 # To do:
 
-0. Analyze scoring, see what new states are needed, whether they need to be taken during scoring, or can be done before scoring starts
+0. Collect extra input before scoring
 
-   1.1. Analyze how to properly collect extra input for Spell 24
+1. Fix issue with click listeners not being properly cleared, so that after some time, clicking on a spell can cause multiple ActionAPI calls. It's a bug.
 
 1. Scoring
 
-2. Effects:
+1. Introduce a class to handle all things related to Crystals. Right now there are multiple, separate for players, separate for spells. It's a mess with trying to keep them in sync.
+
+1. Effects:
 
 - ChangeDraftOrderOrWinADrawSpellEffect: it's a special case, it's both immediate and scoring effect
 - Defense, card 26. It protects from negative effects, so need to add conditionality on all negative things like spell destruction and so on. Also add some indicator on UI.
@@ -44,3 +46,5 @@
 9. There was some bug that after copying an immediate spell, target spell being "destroy spell", the destroyed spell moved up to despawn, but didn't disappear. It was a bug.
 
 10. OverloadEffect: do it somewhere in the future, it's an optional mode
+
+11. Do proper error handling, validation of input. For now it just all assumes that it will work fine, as I am still learning the framework, but it needs to be better, safer. Backend can't just trust frontend, it must be properly validated.

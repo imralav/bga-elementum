@@ -1,6 +1,6 @@
 # General rules
 
-1. Each player board is scored separately.
+1. Each player board is scored separately, can be done in parallel.
 2. Spells are scored from left to right, column by column. So first column is scored first, then second column, etc.
 3. Element sources loop back, so first column is connected to last column. It is important for neighbourhood scoring.
 4. There are some spells that require extra player action. Described below.
@@ -13,7 +13,7 @@ Cards that require extra player action:
 
 ## 13
 
-player selects another card from his or her board and gets half of the points that the card is worth. Works only when empowered. Selected card also needs to be empowered.
+player selects another card from his or her board and gets half of the points that the card is worth. Works only when empowered.
 
 State `pickSpellToGetHalfThePoints`.
 

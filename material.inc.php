@@ -177,14 +177,14 @@ $this->basicSpells = array(
     'Vir Dives',
     Elements::FIRE,
     new CollectionSpellEffect(Elements::EARTH, Elements::AIR, 3, 5, 9),
-    SpellActivation::PASSIVE
+    SpellActivation::SCORING
   ),
   Spell::create(
     13,
     'Commodum',
     Elements::FIRE,
     new ElementumFromOtherSpellEffect(0.5),
-    SpellActivation::PASSIVE
+    SpellActivation::SCORING
   ),
 
   //earth spells
@@ -270,7 +270,7 @@ $this->basicSpells = array(
     'Multus',
     Elements::EARTH,
     new SetOf4ElementsSpellEffect(2),
-    SpellActivation::PASSIVE
+    SpellActivation::SCORING
   ),
   Spell::create(
     24,
@@ -284,7 +284,7 @@ $this->basicSpells = array(
     'Vir Dives',
     Elements::EARTH,
     new CollectionSpellEffect(Elements::FIRE, Elements::AIR, 3, 5, 9),
-    SpellActivation::PASSIVE
+    SpellActivation::SCORING
   ),
   Spell::create(
     26,
@@ -384,14 +384,14 @@ $this->basicSpells = array(
     'Rectus',
     Elements::WATER,
     new MostFullRowsSpellEffect(6),
-    SpellActivation::PASSIVE
+    SpellActivation::SCORING
   ),
   Spell::create(
     38,
     'Imitari',
     Elements::WATER,
     new CopyNonImmediateSpellSpellEffect(),
-    SpellActivation::PASSIVE
+    SpellActivation::SCORING
   ),
   Spell::create(
     39,
@@ -492,7 +492,7 @@ $this->basicSpells = array(
     'Iniquus',
     Elements::AIR,
     new MostIncompleteRowsSpellEffect(6),
-    SpellActivation::PASSIVE
+    SpellActivation::SCORING
   ),
   Spell::create(
     51,

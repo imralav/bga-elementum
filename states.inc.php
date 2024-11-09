@@ -254,6 +254,7 @@ $machinestates = array(
         "descriptionmyturn" => clienttranslate('${you} must select a Spell to copy'),
         "type" => "activeplayer",
         "possibleactions" => ["actPickSpellWithScoringActivationToCopy", "actDontPickSpellWithScoringActivationToCopy"],
+        "args" => "argPickSpellWithScoringActivationToCopy",
         "transitions" => ['spellPicked' => 8, 'spellNotPicked' => 8]
     ),
 
