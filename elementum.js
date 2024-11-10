@@ -369,7 +369,6 @@ define("src/client/gui/Crystals", ["require", "exports", "ebg/zone", "src/client
             });
         };
         Crystals.prototype.createCrystalPileForSpell = function (spellNumber) {
-            debugger;
             var crystalsPile = Templates_1.Templates.idOfCrystalsForSpell(spellNumber);
             if (!$(crystalsPile)) {
                 console.error("Element not found", crystalsPile);
@@ -1383,6 +1382,28 @@ define("src/client/ActionsAPI", ["require", "exports", "bgagame/elementum"], fun
                 });
             });
         };
+        ActionsAPI.actPickSpellToGetHalfThePoints = function (spellNumber) {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2, elementum_2.Elementum.getInstance()
+                            .performAction("actPickSpellToGetHalfThePoints", { spellNumber: spellNumber })
+                            .catch(function () {
+                            throw new Error("Error picking spell to get half the points");
+                        })];
+                });
+            });
+        };
+        ActionsAPI.actDontPickSpellToGetHalfThePoints = function () {
+            return __awaiter(this, void 0, void 0, function () {
+                return __generator(this, function (_a) {
+                    return [2, elementum_2.Elementum.getInstance()
+                            .performAction("actDontPickSpellToGetHalfThePoints")
+                            .catch(function () {
+                            throw new Error("Error cancelling spell choice");
+                        })];
+                });
+            });
+        };
         return ActionsAPI;
     }());
     exports.ActionsAPI = ActionsAPI;
@@ -1974,7 +1995,80 @@ define("src/client/states/PickVirtualElementSourcesState", ["require", "exports"
     }(NoopState_13.NoopState));
     exports.PickVirtualElementSourcesState = PickVirtualElementSourcesState;
 });
-define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook/common", "src/client/gui/ElementumGameInterface", "src/client/states/NoopState", "src/client/states/PickSpellState", "src/client/states/SpellDestinationChoiceState", "src/client/common/Templates", "src/client/Notifications", "src/client/states/PlayersDraftState", "src/client/gui/GameInfoPanel", "src/client/states/UniversalElementDestinationChoiceState", "src/client/gui/Announcement", "src/client/states/DestroyTargetSelectionState", "src/client/states/AddFromSpellPoolSpellSelectionState", "src/client/states/ExchangeWithSpellPoolUniversalElementSpellDestinationState", "src/client/states/CopyImmediateSpellSelectionState", "src/client/states/ExchangeWithSpellPoolSpellOnBoardSelectionState", "src/client/states/ExchangeWithSpellPoolSpellFromPoolSelectionState", "src/client/states/PlacingPowerCrystalsState", "src/client/states/AddFromSpellPoolUniversalElementSpellDestinationState copy", "src/client/states/PickVirtualElementSourcesState"], function (require, exports, Gamegui, CommonMixer, ElementumGameInterface_1, NoopState_14, PickSpellState_1, SpellDestinationChoiceState_1, Templates_8, Notifications_1, PlayersDraftState_1, GameInfoPanel_2, UniversalElementDestinationChoiceState_1, Announcement_1, DestroyTargetSelectionState_1, AddFromSpellPoolSpellSelectionState_1, ExchangeWithSpellPoolUniversalElementSpellDestinationState_1, CopyImmediateSpellSelectionState_1, ExchangeWithSpellPoolSpellOnBoardSelectionState_1, ExchangeWithSpellPoolSpellFromPoolSelectionState_1, PlacingPowerCrystalsState_1, AddFromSpellPoolUniversalElementSpellDestinationState_copy_1, PickVirtualElementSourcesState_1) {
+define("src/client/states/PickSpellToGetHalfThePointsState", ["require", "exports", "src/client/ActionsAPI", "src/client/states/NoopState"], function (require, exports, ActionsAPI_14, NoopState_14) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.PickSpellToGetHalfThePointsState = void 0;
+    var PickSpellToGetHalfThePointsState = (function (_super) {
+        __extends(PickSpellToGetHalfThePointsState, _super);
+        function PickSpellToGetHalfThePointsState(gui, elementum) {
+            var _this = _super.call(this) || this;
+            _this.gui = gui;
+            _this.elementum = elementum;
+            return _this;
+        }
+        PickSpellToGetHalfThePointsState.prototype.onEnter = function () {
+            console.log("PickSpellToGetHalfThePointsState");
+            this.gui.makeSpellsClickableOnCurrentPlayersBoard();
+        };
+        PickSpellToGetHalfThePointsState.prototype.onUpdateActionButtons = function (args) {
+            this.elementum.addCancelButton(_("Don't pick any spell"), function () {
+                ActionsAPI_14.ActionsAPI.actDontPickSpellToGetHalfThePoints().then(function () {
+                    console.log("Cancelled spell choice");
+                });
+            });
+        };
+        PickSpellToGetHalfThePointsState.prototype.spellOnBoardClicked = function (playerId, spell, element) {
+            if (+playerId != +this.elementum.getActivePlayerId()) {
+                return;
+            }
+            console.log("Picking spell to get half the points", spell, element);
+            ActionsAPI_14.ActionsAPI.actPickSpellToGetHalfThePoints(spell.number).then(function () {
+                console.log("Picked spell to get half the points");
+            }, function () {
+                console.error("Failed to pick spell to get half the points");
+            });
+        };
+        PickSpellToGetHalfThePointsState.prototype.onLeave = function () {
+            console.log("PickSpellToGetHalfThePointsState");
+            this.gui.makeSpellsNotClickableOnCurrentPlayersBoard();
+        };
+        return PickSpellToGetHalfThePointsState;
+    }(NoopState_14.NoopState));
+    exports.PickSpellToGetHalfThePointsState = PickSpellToGetHalfThePointsState;
+});
+define("src/client/states/AnnounceOnEnterState", ["require", "exports", "src/client/gui/Announcement", "src/client/states/NoopState"], function (require, exports, Announcement_1, NoopState_15) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.AnnounceOnEnterState = void 0;
+    var AnnounceOnEnterState = (function (_super) {
+        __extends(AnnounceOnEnterState, _super);
+        function AnnounceOnEnterState(message, limit) {
+            if (limit === void 0) { limit = 1; }
+            var _this = _super.call(this) || this;
+            _this.message = message;
+            _this.limit = limit;
+            _this.announcementCounter = 0;
+            return _this;
+        }
+        AnnounceOnEnterState.prototype.onEnter = function () {
+            console.log("AnnounceOnEnterState");
+            if (this.canAnnounce()) {
+                this.announceAndIncrementCounter(this.message);
+            }
+        };
+        AnnounceOnEnterState.prototype.canAnnounce = function () {
+            return this.announcementCounter < this.limit;
+        };
+        AnnounceOnEnterState.prototype.announceAndIncrementCounter = function (message) {
+            (0, Announcement_1.announce)(message);
+            this.announcementCounter++;
+        };
+        return AnnounceOnEnterState;
+    }(NoopState_15.NoopState));
+    exports.AnnounceOnEnterState = AnnounceOnEnterState;
+});
+define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook/common", "src/client/gui/ElementumGameInterface", "src/client/states/NoopState", "src/client/states/PickSpellState", "src/client/states/SpellDestinationChoiceState", "src/client/common/Templates", "src/client/Notifications", "src/client/states/PlayersDraftState", "src/client/gui/GameInfoPanel", "src/client/states/UniversalElementDestinationChoiceState", "src/client/gui/Announcement", "src/client/states/DestroyTargetSelectionState", "src/client/states/AddFromSpellPoolSpellSelectionState", "src/client/states/ExchangeWithSpellPoolUniversalElementSpellDestinationState", "src/client/states/CopyImmediateSpellSelectionState", "src/client/states/ExchangeWithSpellPoolSpellOnBoardSelectionState", "src/client/states/ExchangeWithSpellPoolSpellFromPoolSelectionState", "src/client/states/PlacingPowerCrystalsState", "src/client/states/AddFromSpellPoolUniversalElementSpellDestinationState copy", "src/client/states/PickVirtualElementSourcesState", "src/client/states/PickSpellToGetHalfThePointsState", "src/client/states/AnnounceOnEnterState"], function (require, exports, Gamegui, CommonMixer, ElementumGameInterface_1, NoopState_16, PickSpellState_1, SpellDestinationChoiceState_1, Templates_8, Notifications_1, PlayersDraftState_1, GameInfoPanel_2, UniversalElementDestinationChoiceState_1, Announcement_2, DestroyTargetSelectionState_1, AddFromSpellPoolSpellSelectionState_1, ExchangeWithSpellPoolUniversalElementSpellDestinationState_1, CopyImmediateSpellSelectionState_1, ExchangeWithSpellPoolSpellOnBoardSelectionState_1, ExchangeWithSpellPoolSpellFromPoolSelectionState_1, PlacingPowerCrystalsState_1, AddFromSpellPoolUniversalElementSpellDestinationState_copy_1, PickVirtualElementSourcesState_1, PickSpellToGetHalfThePointsState_1, AnnounceOnEnterState_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Elementum = void 0;
@@ -2019,7 +2113,7 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
             });
             this.createStates();
             GameInfoPanel_2.GameInfoPanel.updateCurrentRound(gamedatas.currentRound);
-            (0, Announcement_1.announce)("Current round: " + gamedatas.currentRound + "/3");
+            (0, Announcement_2.announce)("Current round: " + gamedatas.currentRound + "/3");
         };
         Elementum.prototype.getCurrentStateName = function () {
             var _a;
@@ -2035,7 +2129,7 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
                 spellChoice: new PickSpellState_1.PickSpellState(this.gui),
                 spellDestinationChoice: new SpellDestinationChoiceState_1.SpellDestinationChoiceState(this, this.gui),
                 playersDraft: new PlayersDraftState_1.PlayersDraftState(this, this.gui),
-                noop: new NoopState_14.NoopState(),
+                noop: new NoopState_16.NoopState(),
                 universalElementSpellDestination: new UniversalElementDestinationChoiceState_1.UniversalElementDestinationChoiceState(this.gui),
                 destroyTargetSelection: new DestroyTargetSelectionState_1.DestroyTargetSelectionState(this.gui),
                 addFromSpellPool_spellSelection: new AddFromSpellPoolSpellSelectionState_1.AddFromSpellPoolSpellSelectionState(),
@@ -2046,6 +2140,8 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
                 exchangeWithSpellPool_universalElementSpellDestination: new ExchangeWithSpellPoolUniversalElementSpellDestinationState_1.ExchangeWithSpellPoolUniversalElementSpellDestinationState(this.gui, this),
                 placingPowerCrystals: new PlacingPowerCrystalsState_1.PlacingPowerCrystalsState(this.gui, this),
                 pickVirtualElementSources: new PickVirtualElementSourcesState_1.PickVirtualElementSourcesState(this),
+                pickSpellToGetHalfThePoints: new PickSpellToGetHalfThePointsState_1.PickSpellToGetHalfThePointsState(this.gui, this),
+                scoringExtraInputCheck: new AnnounceOnEnterState_1.AnnounceOnEnterState(_("Collecting extra input before scoring")),
             };
         };
         Elementum.prototype.getStateByName = function (stateName) {
@@ -2101,7 +2197,7 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
             (0, Notifications_1.onNotification)("newRound").do(function (notification) {
                 var round = notification.args.round;
                 GameInfoPanel_2.GameInfoPanel.updateCurrentRound(round);
-                (0, Announcement_1.announce)("Round " + round + " started");
+                (0, Announcement_2.announce)("Round " + round + " started");
             });
             (0, Notifications_1.onNotification)("elementPicked").do(function () {
                 _this.gui.makeElementSourcesNotClickableForCurrentPlayer();
@@ -2137,7 +2233,7 @@ define("bgagame/elementum", ["require", "exports", "ebg/core/gamegui", "cookbook
                 _this.gui.crystals.moveCrystalFromPlayerToSpell(playerId, spellNumber);
             });
             (0, Notifications_1.onNotification)("extraTurn").do(function () {
-                (0, Announcement_1.announce)("Extra turn! You can play another spell.");
+                (0, Announcement_2.announce)("Extra turn! You can play another spell.");
             });
         };
         Elementum.prototype.performAction = function (action, args) {

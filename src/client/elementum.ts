@@ -32,6 +32,8 @@ import { ExchangeWithSpellPoolSpellFromPoolSelectionState } from "./states/Excha
 import { PlacingPowerCrystalsState } from "./states/PlacingPowerCrystalsState";
 import { AddFromSpellPoolUniversalElementSpellDestinationState } from "./states/AddFromSpellPoolUniversalElementSpellDestinationState copy";
 import { PickVirtualElementSourcesState } from "./states/PickVirtualElementSourcesState";
+import { PickSpellToGetHalfThePointsState } from "./states/PickSpellToGetHalfThePointsState";
+import { AnnounceOnEnterState } from "./states/AnnounceOnEnterState";
 
 /** The root for all of your game code. */
 export class Elementum extends CommonMixer(Gamegui) {
@@ -127,6 +129,13 @@ export class Elementum extends CommonMixer(Gamegui) {
         ),
       placingPowerCrystals: new PlacingPowerCrystalsState(this.gui, this),
       pickVirtualElementSources: new PickVirtualElementSourcesState(this),
+      pickSpellToGetHalfThePoints: new PickSpellToGetHalfThePointsState(
+        this.gui,
+        this
+      ),
+      scoringExtraInputCheck: new AnnounceOnEnterState(
+        _("Collecting extra input before scoring")
+      ),
     };
   }
 

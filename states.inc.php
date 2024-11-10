@@ -228,30 +228,31 @@ $machinestates = array(
         "action" => "stScoringCheckExtraInputNeeded",
         "transitions" => ['noExtraInputNeeded' => 9, 'pickSpellToGetHalfThePoints' => 81, 'pickVirtualElementSources' => 82, 'pickSpellWithScoringActivationToCopy' => 83]
     ),
-
     81 => array(
         "name" => "pickSpellToGetHalfThePoints",
-        "description" => clienttranslate('${actplayer} is selecting a Spell'),
-        "descriptionmyturn" => clienttranslate('${you} must select a Spell'),
+        "description" => clienttranslate('Scoring: ${actplayer} is selecting a Spell'),
+        "descriptionmyturn" => clienttranslate('Scoring: ${you} must select a Spell to get copy half of the points from'),
         "type" => "activeplayer",
         "possibleactions" => ["actPickSpellToGetHalfThePoints", "actDontPickSpellToGetHalfThePoints"],
         "transitions" => ['spellPicked' => 8, 'spellNotPicked' => 8]
     ),
 
+    //TODO: intermediate type: game state to check if there are any candidates for virtual elements. If no, don't even ask
     82 => array(
         "name" => "pickVirtualElementSources",
-        "description" => clienttranslate('${actplayer} is selecting Virtual Element sources'),
-        "descriptionmyturn" => clienttranslate('${you} can select up to 2 Virtual Element sources'),
+        "description" => clienttranslate('Scoring: ${actplayer} is selecting Virtual Element sources'),
+        "descriptionmyturn" => clienttranslate('Scoring: ${you} can select up to 2 Virtual Element sources'),
         "type" => "activeplayer",
+        "action" => "stCheckIfThereAreAnyVirtualElementCandidates",
         "possibleactions" => ["actPickVirtualElementSources"],
         "args" => "argPickVirtualElementSources",
-        "transitions" => ['sourcesPicked' => 8]
+        "transitions" => ['sourcesPicked' => 8, 'noVirtualElementCandidates' => 8]
     ),
 
     83 => array(
         "name" => "pickSpellWithScoringActivationToCopy",
-        "description" => clienttranslate('${actplayer} is selecting a Spell to copy'),
-        "descriptionmyturn" => clienttranslate('${you} must select a Spell to copy'),
+        "description" => clienttranslate('Scoring: ${actplayer} is selecting a Spell to copy'),
+        "descriptionmyturn" => clienttranslate('Scoring: ${you} must select a Spell to copy'),
         "type" => "activeplayer",
         "possibleactions" => ["actPickSpellWithScoringActivationToCopy", "actDontPickSpellWithScoringActivationToCopy"],
         "args" => "argPickSpellWithScoringActivationToCopy",

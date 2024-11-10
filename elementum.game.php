@@ -472,7 +472,6 @@ class Elementum extends Table
     /**
      * Selects a spell as a target of Spell 13. Half of the points of the selected spell will be added to the player's score.
      * Selected spell must be a part of current player's board.
-     * Works only when empowered.
      */
     function actPickSpellToGetHalfThePoints(int $spellNumber)
     {
@@ -546,14 +545,10 @@ class Elementum extends Table
 
     function argPickSpellWithScoringActivationToCopy()
     {
-        $activePlayerId = $this->getActivePlayerId();
         $elementumGameLogic = ElementumGameLogic::restoreFromDB();
-        $playerBoards = $elementumGameLogic->getPlayerBoards();
-        $scoringSpells = array_filter($playerBoards[$activePlayerId]->board, function ($spellNumber) {
-            return self::getSpellByNumber($spellNumber)->spellActivation == SpellActivation::SCORING;
-        });
+        $spellsWithScoringActivation = $elementumGameLogic->getSpellsOnAllBoardsWithActivation(SpellActivation::SCORING);
         return [
-            'scoringSpells' => $scoringSpells
+            'scoringSpells' => $spellsWithScoringActivation
         ];
     }
 
@@ -664,6 +659,19 @@ class Elementum extends Table
             $scoringExtraInput->setupGameStateForNextExtraInputCollection();
         } else {
             $this->gamestate->nextState('noExtraInputNeeded');
+        }
+    }
+
+    function stCheckIfThereAreAnyVirtualElementCandidates()
+    {
+        $this->debug("Checking if there are any virtual element candidates");
+        $elementumGameLogic = ElementumGameLogic::restoreFromDB();
+        $currentPlayerId = $this->getCurrentPlayerId();
+        $virtualElementCandidates = $elementumGameLogic->getVirtualElementSourcesFor($currentPlayerId);
+        if (empty($virtualElementCandidates)) {
+            $this->debug("No virtual element candidates found");
+            ScoringExtraInput::rememberVirtualElementSourcesNotPicked($currentPlayerId);
+            $this->gamestate->nextState('noVirtualElementCandidates');
         }
     }
 

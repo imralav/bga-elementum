@@ -196,4 +196,22 @@ export class ActionsAPI {
         throw new Error("Error picking virtual element sources");
       });
   }
+
+  public static async actPickSpellToGetHalfThePoints(
+    spellNumber: Spell["number"]
+  ) {
+    return Elementum.getInstance()
+      .performAction("actPickSpellToGetHalfThePoints", { spellNumber })
+      .catch(() => {
+        throw new Error("Error picking spell to get half the points");
+      });
+  }
+
+  public static async actDontPickSpellToGetHalfThePoints() {
+    return Elementum.getInstance()
+      .performAction("actDontPickSpellToGetHalfThePoints")
+      .catch(() => {
+        throw new Error("Error cancelling spell choice");
+      });
+  }
 }

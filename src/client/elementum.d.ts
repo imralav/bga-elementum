@@ -96,6 +96,8 @@ declare global {
     56: "exchangeWithSpellPool_spellFromSpellPoolSelection";
     57: "exchangeWithSpellPool_universalElementSpellDestination";
     6: "placingPowerCrystals";
+    8: "scoringExtraInputCheck";
+    81: "pickSpellToGetHalfThePoints";
     82: {
       name: "pickVirtualElementSources";
       argsType: {
@@ -127,6 +129,8 @@ declare global {
     actDontPlacePowerCrystal: string;
     actPlacePowerCrystal: string;
     actPickVirtualElementSources: string;
+    actPickSpellToGetHalfThePoints: string;
+    actDontPickSpellToGetHalfThePoints: String;
   }
 
   type PlayerId = string;

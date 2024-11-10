@@ -22,6 +22,7 @@ use Elementum\PlayerMoveChoices\SpellPoolChoiceResolverInput;
 use Elementum\Players;
 use Elementum\SpellEffects\PlayTwoSpellsEffectContext;
 use Elementum\Spells\Spell;
+use Elementum\Spells\SpellActivation;
 use Elementum\VirtualElementSourcesFinder;
 
 class ElementumGameLogic
@@ -403,5 +404,20 @@ class ElementumGameLogic
     {
         $playerBoard = $this->playerBoards[$playerId];
         return VirtualElementSourcesFinder::findIn($playerBoard);
+    }
+
+    public function getSpellsOnAllBoardsWithActivation(SpellActivation $activation)
+    {
+        $playerBoards = $this->getPlayerBoards();
+        $allPlayedSpells = array();
+        foreach ($playerBoards as $playerBoard) {
+            $allPlayedSpells = array_merge($allPlayedSpells, $playerBoard->getAllPlayedSpells());
+        }
+        return array_values(
+            array_map(function ($spellNumber)  use ($activation) {
+                $spell = Elementum::get()->getSpellByNumber($spellNumber);
+                return $spell->spellActivation === $activation;
+            }, $allPlayedSpells)
+        );
     }
 }

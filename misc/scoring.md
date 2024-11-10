@@ -13,7 +13,7 @@ Cards that require extra player action:
 
 ## 13
 
-player selects another card from his or her board and gets half of the points that the card is worth. Works only when empowered.
+player selects another card from his or her board and gets half of the points that the card is worth
 
 State `pickSpellToGetHalfThePoints`.
 

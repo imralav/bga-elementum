@@ -55,7 +55,6 @@ export class Crystals {
   }
 
   private createCrystalPileForSpell(spellNumber: number) {
-    debugger;
     const crystalsPile = Templates.idOfCrystalsForSpell(spellNumber);
     if (!$(crystalsPile)) {
       console.error("Element not found", crystalsPile);

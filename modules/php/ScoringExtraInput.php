@@ -73,10 +73,7 @@ class ScoringExtraInput
             Elementum::get()->dump("=============all spells for player $playerId", $allSpellsForPlayer);
             $filteredSpells = array_values(array_filter($allSpellsForPlayer, function ($spell) {
                 $spell = Elementum::get()->getSpellByNumber($spell);
-                if (!self::spellRequiresExtraInput($spell)) {
-                    return false;
-                }
-                return self::extraConditionsMet($spell);
+                return self::spellRequiresExtraInput($spell);
             }));
             if (empty($filteredSpells)) {
                 continue;
@@ -89,17 +86,6 @@ class ScoringExtraInput
     private static function spellRequiresExtraInput(Spell $spell): bool
     {
         return in_array($spell->effect->type, self::SPELLS_THAT_REQUIRE_EXTRA_INPUT);
-    }
-
-    private static function extraConditionsMet(Spell $spell): bool
-    {
-        switch ($spell->effect->type) {
-            case ELEMENTUM_FROM_OTHER_SPELL_SPELL_EFFECT_TYPE:
-                $isEmpowered = Empowerment::isSpellEmpowered($spell);
-                return $isEmpowered;
-            default:
-                return true;
-        }
     }
 
     public function areThereAnyUnhandledSpells()
