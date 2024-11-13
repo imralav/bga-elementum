@@ -2,8 +2,11 @@
 
 namespace Elementum\SpellEffects;
 
+use Elementum;
+use Elementum\Spells\ScoringContext;
+
 if (!defined('SPELL_EFFECT_TYPES')) {
-    define('NO_EFFECT_SPELl_EFFECT_TYPE', 'noEffect');
+    define('NO_EFFECT_SPELL_EFFECT_TYPE', 'noEffect');
     define('EACH_SYMBOL_SPELL_EFFECT_TYPE', 'eachSymbol');
     define('EACH_PAIR_OF_SAME_ELEMENT_SPELL_EFFECT_TYPE', 'eachPairOfSameElement');
     define('EACH_PAIR_SPELL_EFFECT_TYPE', 'eachPair');
@@ -43,13 +46,26 @@ class SpellEffect
     {
         $this->type = $type;
     }
+
+    //TODO: public abstract function calculateScore
+    public function calculateScore(ScoringContext $context)
+    {
+        Elementum::get()->debug("NOT IMPLEMENTED YET: calculateScore for effect $this->type");
+        Elementum::get()->dump("context", $context);
+        return 0;
+    }
 }
 
 class NoEffect extends SpellEffect
 {
     public function __construct()
     {
-        parent::__construct(NO_EFFECT_SPELl_EFFECT_TYPE);
+        parent::__construct(NO_EFFECT_SPELL_EFFECT_TYPE);
+    }
+
+    public function calculateScore(ScoringContext $context)
+    {
+        return 0;
     }
 }
 
@@ -81,11 +97,18 @@ class EachSymbolEffect extends SpellEffect
 {
     public string $element;
     public int $points;
+
     public function __construct(string $element, int $points)
     {
         parent::__construct(EACH_SYMBOL_SPELL_EFFECT_TYPE);
         $this->element = $element;
         $this->points = $points;
+    }
+
+    public function calculateScore(ScoringContext $context)
+    {
+        $result = $context->getCountOfElementForCurrentPlayer($this->element);
+        return $result ? $this->points : 0;
     }
 }
 
@@ -94,6 +117,7 @@ class EachPairEffect extends SpellEffect
     public string $firstElement;
     public string $secondElement;
     public int $points;
+
     public function __construct(string $firstElement, string $secondElement, int $points)
     {
         parent::__construct(EACH_PAIR_SPELL_EFFECT_TYPE);
@@ -101,17 +125,32 @@ class EachPairEffect extends SpellEffect
         $this->secondElement = $secondElement;
         $this->points = $points;
     }
+
+    public function calculateScore(ScoringContext $context)
+    {
+        $countForFirstElement = $context->getCountOfElementForCurrentPlayer($this->firstElement);
+        $countForSecondElement = $context->getCountOfElementForCurrentPlayer($this->secondElement);
+        $countOfPairsOfBothElement = min($countForFirstElement, $countForSecondElement);
+        return $countOfPairsOfBothElement * $this->points;
+    }
 }
 
 class EachTripleOfSameElementSpellEffect extends SpellEffect
 {
     public string $element;
     public int $points;
+
     public function __construct(string $element, int $points)
     {
         parent::__construct(EACH_TRIPLE_OF_SAME_ELEMENT_SPELL_EFFECT_TYPE);
         $this->element = $element;
         $this->points = $points;
+    }
+
+    public function calculateScore(ScoringContext $context)
+    {
+        $count = $context->getCountOfElementForCurrentPlayer($this->element);
+        return floor($count / 3) * $this->points;
     }
 }
 
@@ -125,6 +164,12 @@ class AnyAdjacencySpellEffect extends SpellEffect
         parent::__construct(ANY_ADJACENCY_SPELL_EFFECT_TYPE);
         $this->element = $element;
         $this->points = $points;
+    }
+
+    public function calculateScore(ScoringContext $context): int
+    {
+        $result = $context->isCurrentSpellAdjacentToElement($this->element);
+        return $result ? $this->points : 0;
     }
 }
 
@@ -140,6 +185,15 @@ class FullAdjacencySpellEffect extends SpellEffect
         $this->secondElement = $secondElement;
         $this->points = $points;
     }
+
+
+    public function calculateScore(ScoringContext $context): int
+    {
+        $firstElementAdjacent = $context->isCurrentSpellAdjacentToElement($this->firstElement);
+        $secondElementAdjacent = $context->isCurrentSpellAdjacentToElement($this->secondElement);
+        $bothAdjacent = $firstElementAdjacent && $secondElementAdjacent;
+        return $bothAdjacent ? $this->points : 0;
+    }
 }
 
 class MajorityEffect extends SpellEffect
@@ -151,6 +205,12 @@ class MajorityEffect extends SpellEffect
         parent::__construct(MAJORITY_SPELL_EFFECT_TYPE);
         $this->element = $element;
         $this->points = $points;
+    }
+
+    public function calculateScore(ScoringContext $context)
+    {
+        $result = $context->doesCurrentPlayerHaveMostOfElement($this->element);
+        return $result ? $this->points : 0;
     }
 }
 
@@ -167,25 +227,36 @@ class SurroundingEffect extends SpellEffect
         $this->pointsWhenSurroundedBy3 = $pointsWhenSurroundedBy3;
         $this->pointsWhenSurroundedBy4 = $pointsWhenSurroundedBy4;
     }
+
+    public function calculateScore(ScoringContext $context)
+    {
+        $count = $context->howManySpellsIsCurrentSpellSurroundedBy();
+        if ($count === 1 || $count === 2) {
+            return $this->pointsWhenSurroundedBy1Or2;
+        }
+        if ($count === 3) {
+            return $this->pointsWhenSurroundedBy3;
+        }
+        if ($count === 4) {
+            return $this->pointsWhenSurroundedBy4;
+        }
+        return 0;
+    }
 }
 
 class DoubleSymbolEffect extends SpellEffect
 {
-    public string $element;
-    public function __construct(string $element)
+    public function __construct()
     {
         parent::__construct(DOUBLE_SYMBOL_SPELL_EFFECT_TYPE);
-        $this->element = $element;
     }
 }
 
 class QuadrupleSymbolEffect extends SpellEffect
 {
-    public string $element;
-    public function __construct(string $element)
+    public function __construct()
     {
         parent::__construct(QUADRUPLE_SYMBOL_SPELL_EFFECT_TYPE);
-        $this->element = $element;
     }
 }
 
@@ -214,6 +285,11 @@ class FlatPointsSpellEffect extends SpellEffect
     {
         parent::__construct(FLAT_POINTS_SPELL_EFFECT_TYPE);
         $this->points = $points;
+    }
+
+    public function calculateScore(ScoringContext $context)
+    {
+        return $this->points;
     }
 }
 
@@ -249,6 +325,23 @@ class CollectionSpellEffect extends SpellEffect
         $this->pointsWhen8Collected = $pointsWhen8Collected;
         $this->pointsWhen10Collected = $pointsWhen10Collected;
     }
+
+    public function calculateScore(ScoringContext $context)
+    {
+        $countOfFirstElement = $context->getCountOfElementForCurrentPlayer($this->firstElement);
+        $countOfSecondElement = $context->getCountOfElementForCurrentPlayer($this->secondElement);
+        $totalCount = $countOfFirstElement + $countOfSecondElement;
+        if ($totalCount >= 10) {
+            return $this->pointsWhen10Collected;
+        }
+        if ($totalCount >= 8) {
+            return $this->pointsWhen8Collected;
+        }
+        if ($totalCount >= 6) {
+            return $this->pointsWhen6Collected;
+        }
+        return 0;
+    }
 }
 
 class ElementumFromOtherSpellEffect extends SpellEffect
@@ -259,6 +352,13 @@ class ElementumFromOtherSpellEffect extends SpellEffect
         parent::__construct(ELEMENTUM_FROM_OTHER_SPELL_SPELL_EFFECT_TYPE);
         $this->pointsFactor = $pointsFactor;
     }
+
+    public function calculateScore(ScoringContext $context)
+    {
+        //TODO: is that the correct approach to get it from the context? 
+        $score = $context->getScoreForSpellToGetPointsFrom();
+        return $score * $this->pointsFactor;
+    }
 }
 
 class SetOf4ElementsSpellEffect extends SpellEffect
@@ -268,6 +368,13 @@ class SetOf4ElementsSpellEffect extends SpellEffect
     {
         parent::__construct(SET_OF_4_SPELL_EFFECT_TYPE);
         $this->points = $points;
+    }
+
+    public function calculateScore(ScoringContext $context)
+    {
+        $summary = $context->getCurrentBoardSummary();
+        $minimum = $summary->getMinimumCountOfAnyElement();
+        return  $minimum * $this->points;
     }
 }
 
@@ -303,6 +410,12 @@ class CopyNonImmediateSpellSpellEffect extends SpellEffect
     {
         parent::__construct(COPY_NON_IMMEDIATE_SPELL_SPELL_EFFECT_TYPE);
     }
+
+    public function calculateScore(ScoringContext $context)
+    {
+        //TODO:
+        return 0;
+    }
 }
 
 class MostFullRowsSpellEffect extends SpellEffect
@@ -313,6 +426,12 @@ class MostFullRowsSpellEffect extends SpellEffect
         parent::__construct(MOST_FULL_ROWS_SPELL_EFFECT_TYPE);
         $this->points = $points;
     }
+
+    public function calculateScore(ScoringContext $context)
+    {
+        $result = $context->doesCurrentPlayerHaveHighestMinimumCountOfAnyElement();
+        return $result ? $this->points : 0;
+    }
 }
 
 class MostIncompleteRowsSpellEffect extends SpellEffect
@@ -322,6 +441,12 @@ class MostIncompleteRowsSpellEffect extends SpellEffect
     {
         parent::__construct(MOST_INCOMPLETE_ROWS_SPELL_EFFECT_TYPE);
         $this->points = $points;
+    }
+
+    public function calculateScore(ScoringContext $context)
+    {
+        //TODO: jak to ma działać dokładnie? co tu jest do sprawdzenia?
+        return 0;
     }
 }
 
@@ -337,6 +462,21 @@ class PowerInCrystalsSpellEffect extends SpellEffect
         $this->pointsFor1Crystal = $pointsFor1Crystal;
         $this->pointsFor2Crystals = $pointsFor2Crystals;
         $this->pointsFor3Crystals = $pointsFor3Crystals;
+    }
+
+    public function calculateScore(ScoringContext $context)
+    {
+        $crystals = $context->howManyCrystalsAreOnCurrentSpell();
+        if ($crystals === 1) {
+            return $this->pointsFor1Crystal;
+        }
+        if ($crystals === 2) {
+            return $this->pointsFor2Crystals;
+        }
+        if ($crystals === 3) {
+            return $this->pointsFor3Crystals;
+        }
+        return 0;
     }
 }
 

@@ -45,6 +45,7 @@ use Elementum\SpellEffects\FullAdjacencySpellEffect;
 use Elementum\SpellEffects\MostFullRowsSpellEffect;
 use Elementum\SpellEffects\MajorityEffect;
 use Elementum\SpellEffects\MostIncompleteRowsSpellEffect;
+use Elementum\SpellEffects\NoEffect;
 use Elementum\SpellEffects\OverloadEffect;
 use Elementum\SpellEffects\PlayTwoSpellsSpellEffect;
 use Elementum\SpellEffects\PowerInCrystalsSpellEffect;
@@ -146,8 +147,8 @@ $this->basicSpells = array(
     8,
     'Duplex',
     Elements::FIRE,
-    new DoubleSymbolEffect(Elements::FIRE),
-    EmpoweredSpellEffect::exclusive(new QuadrupleSymbolEffect(Elements::FIRE)),
+    new DoubleSymbolEffect(),
+    EmpoweredSpellEffect::exclusive(new QuadrupleSymbolEffect()),
     1,
     SpellActivation::PASSIVE
   ),
@@ -253,8 +254,8 @@ $this->basicSpells = array(
     21,
     'Duplex',
     Elements::EARTH,
-    new DoubleSymbolEffect(Elements::EARTH),
-    EmpoweredSpellEffect::exclusive(new QuadrupleSymbolEffect(Elements::EARTH)),
+    new DoubleSymbolEffect(),
+    EmpoweredSpellEffect::exclusive(new QuadrupleSymbolEffect()),
     1,
     SpellActivation::PASSIVE
   ),
@@ -272,11 +273,13 @@ $this->basicSpells = array(
     new SetOf4ElementsSpellEffect(2),
     SpellActivation::SCORING
   ),
-  Spell::create(
+  Spell::createWithEmpoweredEffects(
     24,
     'Qui Fieri',
     Elements::EARTH,
-    new VirtualElementSourcesSpellEffect(2),
+    new NoEffect(),
+    EmpoweredSpellEffect::exclusive(new VirtualElementSourcesSpellEffect(2)),
+    1,
     SpellActivation::PASSIVE
   ),
   Spell::create(
@@ -360,8 +363,8 @@ $this->basicSpells = array(
     34,
     'Duplex',
     Elements::WATER,
-    new DoubleSymbolEffect(Elements::WATER),
-    EmpoweredSpellEffect::exclusive(new QuadrupleSymbolEffect(Elements::WATER)),
+    new DoubleSymbolEffect(),
+    EmpoweredSpellEffect::exclusive(new QuadrupleSymbolEffect()),
     1,
     SpellActivation::PASSIVE
   ),
@@ -468,8 +471,8 @@ $this->basicSpells = array(
     47,
     'Duplex',
     Elements::AIR,
-    new DoubleSymbolEffect(Elements::AIR),
-    EmpoweredSpellEffect::exclusive(new QuadrupleSymbolEffect(Elements::AIR)),
+    new DoubleSymbolEffect(),
+    EmpoweredSpellEffect::exclusive(new QuadrupleSymbolEffect()),
     1,
     SpellActivation::PASSIVE
   ),

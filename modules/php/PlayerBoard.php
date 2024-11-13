@@ -56,12 +56,25 @@ class PlayerBoard extends  \APP_DbObject
         return new PlayerBoard($playerId, $elementSources, $board);
     }
 
-    public function getAmountOfElement(string $element)
+    public function getAmountOfSpellsForElement(string $element)
     {
         if (isset($this->board[$element])) {
             return count($this->board[$element]);
         } else {
             return 0;
+        }
+    }
+
+    /**
+     * @param string $element the element to get the spells for
+     * @return array<int> a list of spell numbers for the given element
+     */
+    public function getSpellsOfElement(string $element)
+    {
+        if (isset($this->board[$element])) {
+            return $this->board[$element];
+        } else {
+            return array();
         }
     }
 
@@ -85,10 +98,10 @@ class PlayerBoard extends  \APP_DbObject
 
     public function summary()
     {
-        $fireCount = $this->getAmountOfElement('fire');
-        $waterCount = $this->getAmountOfElement('water');
-        $earthCount = $this->getAmountOfElement('earth');
-        $airCount = $this->getAmountOfElement('air');
+        $fireCount = $this->getAmountOfSpellsForElement('fire');
+        $waterCount = $this->getAmountOfSpellsForElement('water');
+        $earthCount = $this->getAmountOfSpellsForElement('earth');
+        $airCount = $this->getAmountOfSpellsForElement('air');
         return new PlayerBoardSummary($fireCount, $waterCount, $earthCount, $airCount);
     }
 

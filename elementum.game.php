@@ -22,12 +22,14 @@ require_once('modules/php/ElementumGameLogic.php');
 require_once('modules/php/PlayerMoveChoices/PickedSpells.php');
 require_once('modules/php/PlayerMoveChoices/DraftChoices.php');
 require_once('modules/php/Spells/AddFromSpellPoolEffectContext.php');
+require_once('modules/php/Spells/ScoringContext.php');
 require_once('modules/php/Spells/ExchangeWithSpellPoolEffectContext.php');
 require_once('modules/php/Spells/PlayTwoSpellsEffectContext.php');
 require_once('modules/php/CrystalsOnSpells.php');
 require_once('modules/php/Scoring.php');
 require_once('modules/php/ScoringExtraInput.php');
 require_once('modules/php/Empowerment.php');
+require_once('modules/php/utils/Logger.php');
 
 use Elementum\PlayerCrystals;
 use Elementum\PlayerMoveChoices\DraftChoices;
@@ -160,6 +162,7 @@ class Elementum extends Table
         $result['pickedSpell'] = PickedSpells::getPickedSpellOf($current_player_id);
         $result['allSpells'] = $this->allSpells;
         $result['currentRound'] = $elementumGameLogic->getCurrentRound();
+        $result['score'] = $this->globals->get('score');
         return $result;
     }
 
@@ -678,9 +681,11 @@ class Elementum extends Table
     function stScoring()
     {
         $this->debug("Scoring");
-        Scoring::calculateScores();
-        $score = Scoring::getScores();
+        $score = Scoring::calculate();
         Notifications::notifyPlayersAboutScore($score);
+        //TODO: set player scores in BGA framework
+        //TODO: save scoring somewhere to read it on refresh of endgame state?
+        $this->globals->set('score', $score);
         $this->gamestate->nextState('endGame');
     }
 

@@ -34,6 +34,7 @@ import { AddFromSpellPoolUniversalElementSpellDestinationState } from "./states/
 import { PickVirtualElementSourcesState } from "./states/PickVirtualElementSourcesState";
 import { PickSpellToGetHalfThePointsState } from "./states/PickSpellToGetHalfThePointsState";
 import { AnnounceOnEnterState } from "./states/AnnounceOnEnterState";
+import { PickSpellWithScoringActivationToCopyState } from "./states/PickSpellWithScoringActivationToCopy";
 
 /** The root for all of your game code. */
 export class Elementum extends CommonMixer(Gamegui) {
@@ -136,6 +137,8 @@ export class Elementum extends CommonMixer(Gamegui) {
       scoringExtraInputCheck: new AnnounceOnEnterState(
         _("Collecting extra input before scoring")
       ),
+      pickSpellWithScoringActivationToCopy:
+        new PickSpellWithScoringActivationToCopyState(this.gui, this),
     };
   }
 

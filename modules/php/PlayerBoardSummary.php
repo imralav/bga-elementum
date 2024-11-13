@@ -42,6 +42,11 @@ class PlayerBoardSummary
         return $this->{$element . 'Count'};
     }
 
+    public function getMinimumCountOfAnyElement(): int
+    {
+        return min($this->fireCount, $this->waterCount, $this->earthCount, $this->airCount);
+    }
+
     public static function empty()
     {
         return new PlayerBoardSummary(0, 0, 0, 0);

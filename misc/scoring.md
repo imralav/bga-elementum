@@ -24,6 +24,8 @@ Before scoring, I need to show the player all the cards that have neightbourhood
 For example, fire spell with neighbouring air and water sources. If there are no air or water sources in the columns next to it, player can choose one or two of the sources to be matched by virtual element sources.
 It doesn't have to be one card, it can be multiple cards. The limit is two element sources.
 
+It must be empowered to work!
+
 State `pickVirtualElementSources`.
 
 ## 38
@@ -31,6 +33,10 @@ State `pickVirtualElementSources`.
 player selects another card "podczas punktacji" (card with a Goblet in the bottom left corner) and plays the card's effect.
 
 State `pickSpellWithScoringActivationToCopy`.
+
+## Model for extra action state
+
+Due to the fact that Spell 38 can select another card that needs extra action,
 
 # Solution
 

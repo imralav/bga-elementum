@@ -5,7 +5,7 @@ import { Element } from "../spells/elementum.types";
 import { Spell } from "../spells/Spell";
 import { NoopState } from "./NoopState";
 
-export class PickSpellToGetHalfThePointsState extends NoopState {
+export class PickSpellWithScoringActivationToCopyState extends NoopState {
   constructor(
     private gui: ElementumGameInterface,
     private elementum: Elementum
@@ -14,8 +14,8 @@ export class PickSpellToGetHalfThePointsState extends NoopState {
   }
 
   public onEnter() {
-    console.log("PickSpellToGetHalfThePointsState");
-    this.gui.makeSpellsClickableOnCurrentPlayersBoard();
+    console.log("pickSpellWithScoringActivationToCopy");
+    this.gui.makeSpellsClickableOnAllBoards();
   }
 
   onUpdateActionButtons(args: AnyGameStateArgs | null): void {
@@ -23,7 +23,7 @@ export class PickSpellToGetHalfThePointsState extends NoopState {
       return;
     }
     this.elementum.addCancelButton(_("Don't pick any spell"), () => {
-      ActionsAPI.actDontPickSpellToGetHalfThePoints().then(() => {
+      ActionsAPI.actDontPickSpellWithScoringActivationToCopy().then(() => {
         console.log("Cancelled spell choice");
       });
     });
@@ -34,22 +34,19 @@ export class PickSpellToGetHalfThePointsState extends NoopState {
     spell: Spell,
     element: Element
   ): void {
-    if (+playerId != +this.elementum.getActivePlayerId()) {
-      return;
-    }
-    console.log("Picking spell to get half the points", spell, element);
-    ActionsAPI.actPickSpellToGetHalfThePoints(spell.number).then(
+    console.log("Picking spell to", spell, element);
+    ActionsAPI.actPickSpellWithScoringActivationToCopy(spell.number).then(
       () => {
-        console.log("Picked spell to get half the points");
+        console.log("Picked spell");
       },
       () => {
-        console.error("Failed to pick spell to get half the points");
+        console.error("Failed to pick spell");
       }
     );
   }
 
   public onLeave() {
-    console.log("PickSpellToGetHalfThePointsState");
-    this.gui.makeSpellsNotClickableOnCurrentPlayersBoard();
+    console.log("PickSpellWithScoringActivationToCopyState");
+    this.gui.makeSpellsNotClickableOnAllBoards();
   }
 }

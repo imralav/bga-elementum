@@ -214,4 +214,23 @@ export class ActionsAPI {
         throw new Error("Error cancelling spell choice");
       });
   }
+
+  public static async actPickSpellWithScoringActivationToCopy(
+    spellNumber: Spell["number"]
+  ) {
+    return Elementum.getInstance()
+      .performAction("actPickSpellWithScoringActivationToCopy", {
+        spellNumber,
+      })
+      .catch(() => {
+        throw new Error("Error picking spell to get half the points");
+      });
+  }
+  public static async actDontPickSpellWithScoringActivationToCopy() {
+    return Elementum.getInstance()
+      .performAction("actDontPickSpellWithScoringActivationToCopy")
+      .catch(() => {
+        throw new Error("Error cancelling spell choice");
+      });
+  }
 }

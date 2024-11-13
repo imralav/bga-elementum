@@ -10,6 +10,7 @@ class ScoringExtraInput
     private const UNHANDLED_SPELLS_KEY = 'unhandledSpells';
     private const VIRTUAL_ELEMENTS_KEY = 'virtualElements';
     private const ELEMENTUM_FROM_OTHER_SPELL_KEY = 'elementumFromOtherSpell';
+    private const COPY_SCORING_SPELL_KEY = 'copyScoringSpell';
 
     /**
      * @var array<string> list of spell effect types that require extra input
@@ -70,10 +71,12 @@ class ScoringExtraInput
         $spellsPlayedPerPlayer = [];
         foreach ($playerBoards as $playerId => $playerBoard) {
             $allSpellsForPlayer = $playerBoard->getAllPlayedSpells();
-            Elementum::get()->dump("=============all spells for player $playerId", $allSpellsForPlayer);
             $filteredSpells = array_values(array_filter($allSpellsForPlayer, function ($spell) {
                 $spell = Elementum::get()->getSpellByNumber($spell);
-                return self::spellRequiresExtraInput($spell);
+                if (!self::spellRequiresExtraInput($spell)) {
+                    return false;
+                }
+                return self::extraConditionsMet($spell);
             }));
             if (empty($filteredSpells)) {
                 continue;
@@ -85,7 +88,20 @@ class ScoringExtraInput
 
     private static function spellRequiresExtraInput(Spell $spell): bool
     {
-        return in_array($spell->effect->type, self::SPELLS_THAT_REQUIRE_EXTRA_INPUT);
+        $typesPresentInGivenSpell = array_filter(self::SPELLS_THAT_REQUIRE_EXTRA_INPUT, function ($effectType) use ($spell) {
+            return $spell->hasEffectOfType($effectType) || $spell->hasEmpoweredEffectOfType($effectType);
+        });
+        return !empty($typesPresentInGivenSpell);
+    }
+
+    private static function extraConditionsMet(Spell $spell): bool
+    {
+        switch ($spell->effect->type) {
+            case VIRTUAL_ELEMENT_SOURCES_SPELL_EFFECT_TYPE:
+                return Empowerment::isSpellEmpowered($spell);
+            default:
+                return true;
+        }
     }
 
     public function areThereAnyUnhandledSpells()
@@ -172,7 +188,14 @@ class ScoringExtraInput
         self::spellHandled($playerId, VIRTUAL_ELEMENT_SOURCES_SPELL_EFFECT_TYPE);
     }
 
-    public static function rememberSpellToCopy(int $playerId, int $spellNumber) {}
+    public static function rememberSpellToCopy(int $playerId, int $spellNumber)
+    {
+        Elementum::get()->globals->set(self::COPY_SCORING_SPELL_KEY, $spellNumber);
+        self::spellHandled($playerId, COPY_NON_IMMEDIATE_SPELL_SPELL_EFFECT_TYPE);
+    }
 
-    public static function rememberSpellToCopyNotPicked(int $playerId) {}
+    public static function rememberSpellToCopyNotPicked(int $playerId)
+    {
+        self::spellHandled($playerId, COPY_NON_IMMEDIATE_SPELL_SPELL_EFFECT_TYPE);
+    }
 }

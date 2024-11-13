@@ -104,6 +104,7 @@ declare global {
         virtualElements: VirtualElementsCandidates;
       };
     };
+    83: "pickSpellWithScoringActivationToCopy";
     99: { name: "gameEnd"; argsType: {} };
   }
 
@@ -130,7 +131,9 @@ declare global {
     actPlacePowerCrystal: string;
     actPickVirtualElementSources: string;
     actPickSpellToGetHalfThePoints: string;
-    actDontPickSpellToGetHalfThePoints: String;
+    actDontPickSpellToGetHalfThePoints: string;
+    actPickSpellWithScoringActivationToCopy: string;
+    actDontPickSpellWithScoringActivationToCopy: string;
   }
 
   type PlayerId = string;
